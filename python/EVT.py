@@ -40,8 +40,12 @@ EVT_File.write('\n\n\n')
 # action
 df = pd.read_excel('config.xlsx', sheet_name=7)
 for i in range(len(df)):
-    EVT_File.write('#define ' + df.iloc[i, 0] + ' ')
-    for j in range(len(df.iloc[i].shape[0]))
+    EVT_File.write('#define ' + df.iloc[i, 0] + ' {')
+    for j in range(df.iloc[i].shape[0]):
+        if not pd.isna(df.iloc[i, j]):
+            EVT_File.write(df.iloc[i, j] + '; ')
+    EVT_File.write('}\n')
+EVT_File.write('\n\n\n')
 
 
 df = pd.read_excel('config.xlsx', sheet_name=4)
@@ -78,13 +82,5 @@ for i in range(len(df)):
         EVT_File.write('\n    }\n')
     EVT_File.write('}\n\n\n')
 
-# action
-# df = pd.read_excel('config.xlsx', sheet_name=7)
-# for i in range(len(df)):
-#     EVT_File.write('void ' + df.iloc[i, 0] + '\n{\n')
-#     for j in range(1, df.iloc[i].shape[0]):
-#         if not pd.isna(df.iloc[i, j]):
-#             EVT_File.write('    ' + df.iloc[i, j] + ';\n')
-#     EVT_File.write('}\n\n\n')
 
 EVT_File.close()

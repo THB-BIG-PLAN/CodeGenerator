@@ -30,6 +30,13 @@
 
 
 
+#define LGL_ON() {LGL_ON(); Set_Bit_BDC_FrntLogLampCmd(ON); Set_uint8_FrntLogLamp(ON); }
+#define LGL_OFF() {LGL_OFF(); Set_Bit_BDC_FrntLogLampCmd(OFF); Set_uint8_FrntLogLamp(OFF); }
+#define addTimer(Flag,Time) {addTimer(Flag,Time); Add_Timer(Time, &EVT_flag->TimeOutFlag[Flag]); EVT_flag->LGL_TimeOutFlagNum++; }
+#define delTime(Flag) {delTime(Flag); EVT_flag->LGL_TimeOutFlagNum--; EVT_flag->TimeOutFlag[Flag] = false; }
+
+
+
 void LGL_SEE_ON();
 void LGL_WEL_ON();
 void LGL_VCU_POL_ON();
@@ -203,34 +210,6 @@ void LGL_Normal_OFF2()
          LGL_OFF();
 
     }
-}
-
-
-void LGL_ON()
-{
-    Set_Bit_BDC_FrntLogLampCmd(ON);
-    Set_uint8_FrntLogLamp(ON);
-}
-
-
-void LGL_OFF()
-{
-    Set_Bit_BDC_FrntLogLampCmd(OFF);
-    Set_uint8_FrntLogLamp(OFF);
-}
-
-
-void addTimer(T_u8 TimeOutFlag,T_u16 Time)
-{
-    Add_Timer(Time, &EVT_flag->TimeOutFlag[TimeOutFlag]);
-    EVT_flag->LGL_TimeOutFlagNum++;
-}
-
-
-void delTime(T_u8 TimeOutFlag)
-{
-    EVT_flag->LGL_TimeOutFlagNum--;
-    EVT_flag->TimeOutFlag[TimeOutFlag] = false;
 }
 
 
