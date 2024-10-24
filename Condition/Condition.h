@@ -14,10 +14,31 @@
 #define CHANGETO 7
 #define CHANGE 8
 
+typedef struct Condition {{
+    T_u8 Threshold;
+    T_u8 Symbol;
+    void (*EVT)();
+    T_u8 ConditionID;
+}} Condition;
 
+typedef struct SignalCondition {{
+    T_u8 Signal;
+    T_u8 Len;
+    const Condition* Condition;
+}} SignalCondition;
 
+typedef struct EVT_FLAG {{
+    T_u8 SignalNum[SIGNAL_NUM];
+    T_u8 SignalPreNum[SIGNAL_NUM];
+    T_u8 LGL_TimeOutFlagNum;
+    T_bit TimeOutFlag[TIMEOUT_NUM];
+    T_bit ConditionFlag[CONDITION_NUM];
+}} EVT_FLAG;
 
-
+extern EVT_FLAG* EVT_flag;
+static const SignalCondition SignalConditionArray[SIGNAL_NUM];
+static const Condition TimeOutActionArray[TIMEOUT_NUM];
+#endif /* CONDITION_H_ */
 #define BdcSeedsignal_SIGNALNUM 0
 #define BdcWlcmsignal_SIGNALNUM 1
 #define DLC_u8TurnLightTwice_SIGNALNUM 2
@@ -27,8 +48,6 @@
 #define PPL_boolPosnLampSts_SIGNALNUM 6
 #define PRM_u8PowerSts_SIGNALNUM 7
 #define VcuGearPosn_SIGNALNUM 8
-
-
 
 #define BDCSEEDSIGNAL_NEQ_0 0
 #define BDCSEEDSIGNAL_CHANGETO_0 1
@@ -53,47 +72,11 @@
 #define VCUGEARPOSN_EQ_1 20
 #define LGL_TIMEFLAGNUM_EQ_0 21
 
-
-
 #define LGL_SEE_350ms_TimeOut 0
 #define LGL_EEP_350ms_TimeOut 1
 #define LGL_PRM_350ms_TimeOut 2
 #define LGL_DLC_1500ms_TimeOut 3
 
-
-
 #define SIGNAL_NUM 9
 #define TIMEOUT_NUM 4
 #define CONDITION_NUM 22
-
-
-
-typedef struct Condition{
-	T_u8 Threshold;
-	T_u8 Symbol;
-	void (*EVT)();
-	T_u8 ConditionID;
-}Condition;
-
-
-typedef struct SignalCondition
-{
-	T_u8 Signal;
-	T_u8 Len;
-	const Condition* Condition;
-}SignalCondition;
-
-
-typedef struct EVT_FLAG {
-
-	T_u8 SignalNum[SIGNAL_NUM];
-	T_u8 SignalPreNum[SIGNAL_NUM];
-	T_u8 LGL_TimeOutFlagNum;
-	T_bit TimeOutFlag[TIMEOUT_NUM];
-	T_bit ConditionFlag[CONDITION_NUM];
-}EVT_FLAG;
-
-extern EVT_FLAG* EVT_flag;
-static const SignalCondition SignalConditionArray[SIGNAL_NUM];
-static const Condition TimeOutActionArray[TIMEOUT_NUM];
-#endif /* CONDITION_H_ */

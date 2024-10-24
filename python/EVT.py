@@ -1,86 +1,111 @@
-import os
-import re
-
 import pandas as pd
-import openpyxl
+import re
 import warnings
 
 # 忽略警告
 warnings.simplefilter(action='ignore', category=UserWarning)
 
-# EVT.h
-df = pd.read_excel('config.xlsx', sheet_name=4).iloc[:, 0]
-EVT_File = open('../EVT/EVT.h', 'w+')
-EVT_File.write('''
-#ifndef EVT_EVENT_EVT_
-#define EVT_EVENT_EVT_\n\n\n
-''')
-for index in range(len(df)):
-    EVT_File.write('extern void ' + str(df[index]) + '();\n')
-EVT_File.write('\n#endif /* EVT_EVENT_EVT_ */')
-EVT_File.close()
+# 常量定义
+CONFIG_PATH = 'config.xlsx'
+EVT_HEADER_PATH = '../EVT/EVT.h'
+EVT_SOURCE_PATH = '../EVT/EVT.c'
 
-# EVT.c
-df = pd.read_excel('config.xlsx', sheet_name=6)
-EVT_File = open('../EVT/EVT.c', 'w+')
-EVT_File.write('''
-#include <Type_define.h>
+
+def write_event_header(file):
+    """写入 EVT.h 文件."""
+    df = pd.read_excel(CONFIG_PATH, sheet_name=4).iloc[:, 0]
+
+    file.write('''#ifndef EVT_EVENT_EVT_
+#define EVT_EVENT_EVT_\n\n''')
+
+    for event in df:
+        file.write(f'extern void {event}();\n')
+
+    file.write('\n#endif /* EVT_EVENT_EVT_ */\n')
+
+
+def write_event_definitions(file):
+    """写入事件定义到 EVT.c 文件."""
+    df_events = pd.read_excel(CONFIG_PATH, sheet_name=6)
+
+    for index, row in df_events.iterrows():
+        file.write(f'#define {row.iloc[0]} {row.iloc[1]}\n')
+    file.write('\n\n')
+
+
+def write_action_definitions(file):
+    """写入动作定义到 EVT.c 文件."""
+    df_actions = pd.read_excel(CONFIG_PATH, sheet_name=7)
+
+    for i, row in df_actions.iterrows():
+        file.write(f'#define {row.iloc[0]} {{ ')
+        file.write('; '.join(str(cell) for cell in row if pd.notna(cell)))
+        file.write(' ;}\n')
+    file.write('\n\n')
+
+
+def write_event_function_declarations(file):
+    """写入事件函数声明到 EVT.c 文件."""
+    df_event_funcs = pd.read_excel(CONFIG_PATH, sheet_name=4)
+
+    for event in df_event_funcs.iloc[:, 0]:
+        file.write(f'void {event}();\n')
+
+    file.write('\n\nvoid LGL_initialize() {\n    Conditon_Init();\n}\n\n')
+
+
+def write_event_functions(file):
+    """写入事件函数定义到 EVT.c 文件."""
+    df_event_funcs = pd.read_excel(CONFIG_PATH, sheet_name=4)
+
+    for i, event in enumerate(df_event_funcs.iloc[:, 0]):
+        file.write(f'void {event}() \n{{\n')
+
+        if pd.isna(df_event_funcs.iloc[i, 4]) or re.match('2', event):
+            for j in range(1, 3):
+                if pd.notna(df_event_funcs.iloc[i, j]):
+                    file.write(f'    {df_event_funcs.iloc[i, j]};\n')
+        else:
+            conditions = [
+                f'EVT_Flag->ConditionFlag[{df_event_funcs.iloc[i, j]}]'
+                for j in range(3, df_event_funcs.shape[1])
+                if pd.notna(df_event_funcs.iloc[i, j]) and df_event_funcs.iloc[i, j] != 'AND'
+            ]
+            file.write('    if (' + ' && \n        '.join(conditions) + ') \n    {\n')
+            for j in range(1, 3):
+                if pd.notna(df_event_funcs.iloc[i, j]):
+                    file.write(f'        {df_event_funcs.iloc[i, j]};\n')
+            file.write('    }\n')
+
+        file.write('}\n\n')
+
+
+def write_event_source():
+    """写入 EVT.c 文件."""
+    with open(EVT_SOURCE_PATH, 'w') as evt_file:
+        evt_file.write('''#include <Type_define.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sgn/signal_api.h>
 #include "EVT/Timer/Timer.api.h"
 #include "EVT/Event/EVT.h"
 #include "EVT/Logic/Logic.h"
-#include "EVT/Condition/Condition.h"\n\n\n\n
-''')
-for index in range(len(df)):
-    EVT_File.write('#define ' + df.iloc[index, 0] + ' ' + str(df.iloc[index, 1]) + '\n')
-EVT_File.write('\n\n\n')
+#include "EVT/Condition/Condition.h"\n\n''')
 
-# action
-df = pd.read_excel('config.xlsx', sheet_name=7)
-for i in range(len(df)):
-    EVT_File.write('#define ' + df.iloc[i, 0] + ' {')
-    for j in range(df.iloc[i].shape[0]):
-        if not pd.isna(df.iloc[i, j]):
-            EVT_File.write(df.iloc[i, j] + '; ')
-    EVT_File.write('}\n')
-EVT_File.write('\n\n\n')
+        write_event_definitions(evt_file)
+        write_action_definitions(evt_file)
+        write_event_function_declarations(evt_file)
+        write_event_functions(evt_file)
 
 
-df = pd.read_excel('config.xlsx', sheet_name=4)
-for index in range(len(df)):
-    EVT_File.write('void ' + df.iloc[index, 0] + '();\n')
-EVT_File.write('\n\n\n')
-EVT_File.write('''
-void LGL_initialize()
-{
-	Conditon_Init();
-}
-''')
-EVT_File.write('\n')
+def main():
+    with open(EVT_HEADER_PATH, 'w') as evt_file:
+        write_event_header(evt_file)
 
-for i in range(len(df)):
-    EVT_File.write('void ' + df.iloc[i, 0] + '()\n{\n')
-    if pd.isna(df.iloc[i, 4]) or (re.match('2', df.iloc[i, 0]) is not None):
-        for j in range(1, 3):
-            if not pd.isna(df.iloc[i, j]):
-                EVT_File.write('    ' + df.iloc[i, j] + ';\n')
-    else:
-        EVT_File.write('    if(')
-        for j in range(3, df.shape[0] + 1):
-            if not pd.isna(df.iloc[i, j]):
-                if df.iloc[i, j] != 'AND':
-                    EVT_File.write('EVT_Flag->ConditionFlag[{action}]'.format(action=df.iloc[i, j]))
-                else:
-                    EVT_File.write(' && \n       ')
-        EVT_File.write(' )\n    {\n ')
-        for j in range(1, 3):
-            if not pd.isna(df.iloc[i, j]):
-                EVT_File.write('        ' + df.iloc[i, j] + ';\n')
-
-        EVT_File.write('\n    }\n')
-    EVT_File.write('}\n\n\n')
+    write_event_source()
+    print("生成完成，按任意键继续")
+    input()
 
 
-EVT_File.close()
+if __name__ == "__main__":
+    main()

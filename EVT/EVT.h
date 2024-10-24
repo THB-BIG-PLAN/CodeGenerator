@@ -1,8 +1,5 @@
-
 #ifndef EVT_EVENT_EVT_
 #define EVT_EVENT_EVT_
-
-
 
 extern void LGL_SEE_ON();
 extern void LGL_WEL_ON();
