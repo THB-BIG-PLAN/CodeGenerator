@@ -15,8 +15,7 @@ def write_event_header(file):
     """写入 EVT.h 文件."""
     df = pd.read_excel(CONFIG_PATH, sheet_name=4).iloc[:, 0]
 
-    file.write('''#ifndef EVT_EVENT_EVT_
-#define EVT_EVENT_EVT_\n\n''')
+    file.write('''#ifndef EVT_EVENT_EVT_\n#define EVT_EVENT_EVT_\n\n''')
 
     for event in df:
         file.write(f'extern void {event}();\n')
@@ -38,8 +37,8 @@ def write_action_definitions(file):
     df_actions = pd.read_excel(CONFIG_PATH, sheet_name=7)
 
     for i, row in df_actions.iterrows():
-        file.write(f'#define {row.iloc[0]} {{ ')
-        file.write('; '.join(str(cell) for cell in row if pd.notna(cell)))
+        file.write(f'#define {row.iloc[1]} {{ ')
+        file.write('; '.join(str(cell) for cell in row[2:] if pd.notna(cell)))
         file.write(' ;}\n')
     file.write('\n\n')
 

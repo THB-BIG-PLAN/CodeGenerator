@@ -25,10 +25,10 @@
 #define PRM_PWR_OFF 0x0
 
 
-#define LGL_ON() { LGL_ON(); Set_Bit_BDC_FrntLogLampCmd(ON); Set_uint8_FrntLogLamp(ON) ;}
-#define LGL_OFF() { LGL_OFF(); Set_Bit_BDC_FrntLogLampCmd(OFF); Set_uint8_FrntLogLamp(OFF) ;}
-#define addTimer(Flag,Time) { addTimer(Flag,Time); Add_Timer(Time, &EVT_flag->TimeOutFlag[Flag]); EVT_flag->LGL_TimeOutFlagNum++ ;}
-#define delTime(Flag) { delTime(Flag); EVT_flag->LGL_TimeOutFlagNum--; EVT_flag->TimeOutFlag[Flag] = false ;}
+#define LGL_ON() { Set_Bit_BDC_FrntLogLampCmd(ON); Set_uint8_FrntLogLamp(ON) ;}
+#define LGL_OFF() { Set_Bit_BDC_FrntLogLampCmd(OFF); Set_uint8_FrntLogLamp(OFF) ;}
+#define addTimer(Flag,Time) { Add_Timer(Time, &EVT_flag->TimeOutFlag[Flag]); EVT_flag->LGL_TimeOutFlagNum++ ;}
+#define delTime(Flag) { EVT_flag->LGL_TimeOutFlagNum--; EVT_flag->TimeOutFlag[Flag] = false ;}
 
 
 void LGL_SEE_ON();
