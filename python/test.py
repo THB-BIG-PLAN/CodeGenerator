@@ -117,7 +117,7 @@ class ConflictDetector:
         else:
             if self._has_conflict(applied_actions):
                 print(f"BdcSeedsignal :{BdcSeedsignal}\n"
-                      f"BdcWlcmsignal :{BdcWlcmsignal}\n, "
+                      f"BdcWlcmsignal :{BdcWlcmsignal}\n"
                       f"DLC_u8TurnLightTwice :{DLC_u8TurnLightTwice}\n"
                       f"EEP_LOGO_ENABLE_FLAG: {EEP_LOGO_ENABLE_FLAG}\n"
                       f"EspAutoHoldActvSts :{EspAutoHoldActvSts}\n"
@@ -129,7 +129,7 @@ class ConflictDetector:
             else:
                 chosen_action = applied_actions[0][0]
                 print(f"BdcSeedsignal :{BdcSeedsignal}\n"
-                      f"BdcWlcmsignal :{BdcWlcmsignal}\n, "
+                      f"BdcWlcmsignal :{BdcWlcmsignal}\n"
                       f"DLC_u8TurnLightTwice :{DLC_u8TurnLightTwice}\n"
                       f"EEP_LOGO_ENABLE_FLAG: {EEP_LOGO_ENABLE_FLAG}\n"
                       f"EspAutoHoldActvSts :{EspAutoHoldActvSts}\n"
