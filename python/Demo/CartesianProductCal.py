@@ -19,7 +19,6 @@ for i, row in df.iterrows():
         Signal_Name_list.append(row.iloc[0])
     elif df.iloc[i - 1, 0] != df.iloc[i, 0]:
         Signal_Name_list.append(df.iloc[i, 0])
-print(Signal_Name_list)
 
 for i, row in df.iterrows():
     if i == 0:
@@ -35,10 +34,11 @@ for i, row in df.iterrows():
     else:  # 阈值大于0小于255就取阈值的左右边界
         Current_SignalSet.update({row.iloc[2] - 1, row.iloc[2], row.iloc[2] + 1})
 Signal_list.append(Current_SignalSet)
-print(Signal_list)
+
 
 
 # 笛卡尔积
 answer_list = list(itertools.product(*Signal_list))
 
-# 输出结果
+df = pd.DataFrame(answer_list, columns = Signal_Name_list)
+df.to_excel("CartesianProduct.xlsx", sheet_name="CartesianProduct", index=False)
