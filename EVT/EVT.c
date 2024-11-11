@@ -51,17 +51,23 @@ void LGL_Normal_OFF2();
 
 
 void LGL_initialize() {
-    Conditon_Init();
+    Condition_Init();
 }
 
 void LGL_SEE_ON() 
 {
-    LGL_ON();
+    if (EVT_Flag->ConditionFlag[BDCSEEDSIGNAL_NEQ_0]) 
+    {
+        LGL_ON();
+    }
 }
 
 void LGL_WEL_ON() 
 {
-    LGL_ON();
+    if (EVT_Flag->ConditionFlag[BDCWLCMSIGNAL_NEQ_0]) 
+    {
+        LGL_ON();
+    }
 }
 
 void LGL_VCU_POL_ON() 
@@ -111,23 +117,35 @@ void LGL_PRM_EEP_ON()
 
 void LGL_DLC_TUL_ON() 
 {
-    LGL_ON();
-    addTimer(LGL_DLC_1500ms_TimeOut,Counter1500ms);
+    if (EVT_Flag->ConditionFlag[DLC_U8TURNLIGHTTWICE_CHANGE_0XFF]) 
+    {
+        LGL_ON();
+        addTimer(LGL_DLC_1500ms_TimeOut,Counter1500ms);
+    }
 }
 
 void LGL_PRM_ON2NOTON() 
 {
-    addTimer(LGL_PRM_350ms_TimeOut,Counter350ms);
+    if (EVT_Flag->ConditionFlag[EEP_LOGO_ENABLE_FLAG_EQ_1]) 
+    {
+        addTimer(LGL_PRM_350ms_TimeOut,Counter350ms);
+    }
 }
 
 void LGL_EEP_ENABLE2DISABLE() 
 {
-    addTimer(LGL_EEP_350ms_TimeOut,Counter350ms);
+    if (EVT_Flag->ConditionFlag[PRM_U8POWERSTS_EQ_2]) 
+    {
+        addTimer(LGL_EEP_350ms_TimeOut,Counter350ms);
+    }
 }
 
 void LGL_SEE_REQ2NO() 
 {
-    addTimer(LGL_SEE_350ms_TimeOut,Counter350ms);
+    if (EVT_Flag->ConditionFlag[BDCSEEDSIGNAL_CHANGETO_0]) 
+    {
+        addTimer(LGL_SEE_350ms_TimeOut,Counter350ms);
+    }
 }
 
 void LGL_DLC_TIMEOUT() 

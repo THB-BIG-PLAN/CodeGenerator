@@ -50,7 +50,7 @@ def write_event_function_declarations(file):
     for event in df_event_funcs.iloc[:, 0]:
         file.write(f'void {event}();\n')
 
-    file.write('\n\nvoid LGL_initialize() {\n    Conditon_Init();\n}\n\n')
+    file.write('\n\nvoid LGL_initialize() {\n    Condition_Init();\n}\n\n')
 
 
 def write_event_functions(file):
@@ -60,7 +60,7 @@ def write_event_functions(file):
     for i, event in enumerate(df_event_funcs.iloc[:, 0]):
         file.write(f'void {event}() \n{{\n')
 
-        if pd.isna(df_event_funcs.iloc[i, 4]) or re.match('2', event):
+        if pd.isna(df_event_funcs.iloc[i, 3]) or re.match('2', event):
             for j in range(1, 3):
                 if pd.notna(df_event_funcs.iloc[i, j]):
                     file.write(f'    {df_event_funcs.iloc[i, j]};\n')
