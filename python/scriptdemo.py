@@ -6,8 +6,9 @@ import re
 warnings.simplefilter(action='ignore', category=UserWarning)
 
 CONFIG_FILE = "config.xlsx"
-WRITE_FILE = "requirement_verifier_test.py"
+WRITE_FILE = "requirement_verifier.py"
 HEADER = '''
+# -*- coding: GBK -*-
 import pandas as pd
 from enum import Enum
 import warnings
