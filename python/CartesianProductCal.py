@@ -6,7 +6,7 @@ import itertools
 # 忽略警告
 warnings.simplefilter(action='ignore', category=UserWarning)
 
-CONFIG_PATH = '../config.xlsx'
+CONFIG_PATH = 'config.xlsx'
 
 # 读取数据
 df = pd.read_excel(CONFIG_PATH, sheet_name=2)
