@@ -1,10 +1,9 @@
 
-# -*- coding: GBK -*-
+# -*- coding: gbk -*-
 import pandas as pd
 from enum import Enum
 import warnings
 import re
-
 warnings.simplefilter(action='ignore', category=UserWarning)
 class Action0(Enum):
     LGL_ON = 0

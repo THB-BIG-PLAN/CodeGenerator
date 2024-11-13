@@ -8,9 +8,9 @@ warnings.simplefilter(action='ignore', category=UserWarning)
 
 # 常量定义
 CONFIG_PATH = 'config.xlsx'
-HEADER_FILE_PATH = "../Condition/Condition.h"
-SOURCE_FILE_PATH = '../Condition/Condition.c'
-EVT_FILE_PATH = '../EVT/EVT.h'
+HEADER_FILE_PATH = "Condition/Condition.h"
+SOURCE_FILE_PATH = 'Condition/Condition.c'
+EVT_FILE_PATH = 'EVT/EVT.h'
 
 HEADER_TEMPLATE = '''
 #ifndef CONDITION_H_

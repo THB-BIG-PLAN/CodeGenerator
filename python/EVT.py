@@ -7,8 +7,8 @@ warnings.simplefilter(action='ignore', category=UserWarning)
 
 # 常量定义
 CONFIG_PATH = 'config.xlsx'
-EVT_HEADER_PATH = '../EVT/EVT.h'
-EVT_SOURCE_PATH = '../EVT/EVT.c'
+EVT_HEADER_PATH = 'EVT/EVT.h'
+EVT_SOURCE_PATH = 'EVT/EVT.c'
 
 
 def write_event_header(file):
@@ -104,7 +104,3 @@ def main():
     write_event_source()
     print("生成完成，按任意键继续")
     input()
-
-
-if __name__ == "__main__":
-    main()
