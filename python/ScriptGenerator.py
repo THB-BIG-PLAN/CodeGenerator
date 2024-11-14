@@ -25,7 +25,7 @@ Result = pd.DataFrame(columns=['''
     for i, row in SignalDataFrame.iterrows():
         HEADER += f"'{row.iloc[0]}', "
 
-    HEADER += "'Action'])\n"
+    HEADER += "'TIMEFLAGNUM', 'Action'])\n"
 
     RequirementVerifierFile.write(HEADER)
     ActionGroup = None

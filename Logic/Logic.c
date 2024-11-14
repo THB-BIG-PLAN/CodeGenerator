@@ -1,11 +1,6 @@
 #pragma GCC push_options
 #pragma GCC optimize ("O0")
-/*
- * EVT.c
- *
- *  Created on: 2024锟斤拷7锟斤拷5锟斤拷
- *      Author: ADM
- */
+
 #include <Type_define.h>
 #include "EVT/Logic/Logic.h"
 #include "EVT/EVT/EVT.h"
