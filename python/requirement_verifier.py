@@ -3,8 +3,11 @@
 import pandas as pd
 from enum import Enum
 import warnings
+import openpyxl
 import re
 warnings.simplefilter(action='ignore', category=UserWarning)
+from openpyxl import Workbook
+Result = pd.DataFrame(columns=['BdcSeedsignal', 'BdcWlcmsignal', 'DLC_u8TurnLightTwice', 'EEP_LOGO_ENABLE_FLAG', 'EspAutoHoldActvSts', 'PLB_u8LBSts', 'PPL_boolPosnLampSts', 'PRM_u8PowerSts', 'VcuGearPosn', 'Action'])
 class Action0(Enum):
     LGL_ON = 0
     LGL_OFF = 1
@@ -236,20 +239,33 @@ class ConflictDetector:
                 EEP_LOGO_ENABLE_FLAG, EspAutoHoldActvSts, PLB_u8LBSts, 
                 PPL_boolPosnLampSts, PRM_u8PowerSts, VcuGearPosn)
         applied_actions = self._get_applied_actions()
+        ResultDict = self.device_state.current_state.copy()
         if not applied_actions:
             for key, value in self.device_state.current_state.items():
                 print(f'{key} = {value}')
+            ResultDict['Result'] = '无规则适用'
             print('无规则适用\n')
         else:
             if self._has_conflict(applied_actions):
                 for key, value in self.device_state.current_state.items():
                     print(f'{key} = {value}')
+                ResultDict['Result'] = '可能产生冲突'
                 print('可能产生冲突\n')
             else:
                 chosen_action = applied_actions[0][0]
                 for key, value in self.device_state.current_state.items():
                     print(f'{key} = {value}')
                 print(f'执行动作：{chosen_action}\n')
+                ResultDict['Result'] = chosen_action
+        self.Write_Result(ResultDict)
+    def Write_Result(self,ResultDict):
+        workbook = openpyxl.load_workbook('Result.xlsx')
+        sheet = workbook['Sheet1']
+        last_row = sheet.max_row
+        for col_num, (cell_key, cell_value) in enumerate(ResultDict.items(), start=1):
+            # 在新行（last_row + 1）的每个单元格写入数据
+            sheet.cell(row=last_row + 1, column=col_num, value=str(cell_value))
+        workbook.save('Result.xlsx')
     def _get_applied_actions(self):
         """根据条件筛选适用的规则，并按优先级排序"""
         applied_actions = [
@@ -330,9 +346,11 @@ rules = [
 def main():
     detector = ConflictDetector(rules)
     ENVIRONMENT_FILE = 'CartesianProduct.xlsx'
-    BATCH_SIZE = 1000
+    BATCH_SIZE = 100
     skip_rows = 0
     times = 0
+    file_name = 'Result.xlsx'
+    Result.to_excel(file_name, index=False)
     while times != 2:
         try:
             EnvironmentDataFrame = pd.read_excel(ENVIRONMENT_FILE, sheet_name=0, nrows=BATCH_SIZE, skiprows=skip_rows)

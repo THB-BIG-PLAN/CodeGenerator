@@ -36,7 +36,7 @@ def main():
     spec.loader.exec_module(imported_module)
 
     imported_module.main()
-
+    input()
 
 
 if __name__ == '__main__':

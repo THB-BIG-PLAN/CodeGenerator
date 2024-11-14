@@ -2,20 +2,31 @@ import pandas as pd
 from enum import Enum
 import warnings
 import re
+
+
 def main():
     warnings.simplefilter(action='ignore', category=UserWarning)
     CONFIG_FILE = "config.xlsx"
     WRITE_FILE = "requirement_verifier.py"
+    ActionDataFrame = pd.read_excel(CONFIG_FILE, sheet_name="Action")
+    SignalDataFrame = pd.read_excel(CONFIG_FILE, sheet_name=0)
+    RequirementVerifierFile = open(WRITE_FILE, "w")
     HEADER = '''
 # -*- coding: gbk -*-
 import pandas as pd
 from enum import Enum
 import warnings
+import openpyxl
 import re
 warnings.simplefilter(action='ignore', category=UserWarning)
-'''
-    ActionDataFrame = pd.read_excel(CONFIG_FILE, sheet_name="Action")
-    RequirementVerifierFile = open(WRITE_FILE, "w")
+from openpyxl import Workbook
+Result = pd.DataFrame(columns=['''
+
+    for i, row in SignalDataFrame.iterrows():
+        HEADER += f"'{row.iloc[0]}', "
+
+    HEADER += "'Action'])\n"
+
     RequirementVerifierFile.write(HEADER)
     ActionGroup = None
     ActionNumber = 0
@@ -39,7 +50,6 @@ warnings.simplefilter(action='ignore', category=UserWarning)
 
     SignalString = ''  # SignalString = 'Signal1, Signal2, Signal3'
     StateString = ''  # StateString = "'Signal1' :Signal1, 'Signal2' :Signal2, 'Signal3' :Signal3"
-    SignalDataFrame = pd.read_excel(CONFIG_FILE, sheet_name=0)
     EventDataFrame = pd.read_excel(CONFIG_FILE, sheet_name=4)
     ConditionDataFrame = pd.read_excel(CONFIG_FILE, sheet_name=2)
     rownum = 3
@@ -102,7 +112,8 @@ class State:
         if (pd.notna(row.iloc[1]) and re.search('addTimer', row.iloc[1]) is not None) or (
                 pd.notna(row.iloc[2]) and re.search('addTimer', str(row.iloc[2])) is not None):
             row_value = row.iloc[0]
-            ConditionList = ConditionDataFrame[ConditionDataFrame.iloc[:, 3].astype(str) == str(row_value)].index.tolist()
+            ConditionList = ConditionDataFrame[
+                ConditionDataFrame.iloc[:, 3].astype(str) == str(row_value)].index.tolist()
             AddTimeString += f'        if('
             for j in range(len(ConditionList)):
                 AddTimeString += f"(self.{ConditionDataFrame.iloc[ConditionList[j], 4]} == 1)"
@@ -111,7 +122,7 @@ class State:
             AddTimeString += f') '
             if pd.notna(row.iloc[3]):
                 AddTimeString += 'and ('
-                for k in range(3,len(row)):
+                for k in range(3, len(row)):
                     if pd.notna(row.iloc[k]):
                         AddTimeString += f"(self.{row.iloc[k]} == 1)"
                         if k != len(row) - 1 and pd.notna(row.iloc[k + 1]):
@@ -120,7 +131,6 @@ class State:
                 AddTimeString += f'            self.current_state["TIMEFLAGNUM"] += 1\n'
     AddTimeString += '        if self.current_state["TIMEFLAGNUM"] == 0:\n            self.TIMEFLAGNUM_EQ_0 = 1 \n'
     RequirementVerifierFile.write(AddTimeString)
-
 
     ActionConflictString = ''
     ActionGroup = None
@@ -137,7 +147,6 @@ class State:
             ActionGroup = row.iloc[0]
             ActionConflictString += f') or (Action{int(row.iloc[0])}.{ActionName} in actions'
     ActionConflictString += ')\n'
-
 
     SignalInitString = ''.join(map(str, (lambda: ["0, " for _ in range(SignalNumber - 1)] + [0])()))
     RequirementVerifierFile.write(f'''
@@ -185,20 +194,33 @@ class ConflictDetector:
     def detect_and_execute(self,{SignalString}):
         self.device_state.update_state({SignalString})
         applied_actions = self._get_applied_actions()
+        ResultDict = self.device_state.current_state.copy()
         if not applied_actions:
             for key, value in self.device_state.current_state.items():
                 print(f'{{key}} = {{value}}')
+            ResultDict['Result'] = '无规则适用'
             print('无规则适用\\n')
         else:
             if self._has_conflict(applied_actions):
                 for key, value in self.device_state.current_state.items():
                     print(f'{{key}} = {{value}}')
+                ResultDict['Result'] = '可能产生冲突'
                 print('可能产生冲突\\n')
             else:
                 chosen_action = applied_actions[0][0]
                 for key, value in self.device_state.current_state.items():
                     print(f'{{key}} = {{value}}')
                 print(f'执行动作：{{chosen_action}}\\n')
+                ResultDict['Result'] = chosen_action
+        self.Write_Result(ResultDict)
+    def Write_Result(self,ResultDict):
+        workbook = openpyxl.load_workbook('Result.xlsx')
+        sheet = workbook['Sheet1']
+        last_row = sheet.max_row
+        for col_num, (cell_key, cell_value) in enumerate(ResultDict.items(), start=1):
+            # 在新行（last_row + 1）的每个单元格写入数据
+            sheet.cell(row=last_row + 1, column=col_num, value=str(cell_value))
+        workbook.save('Result.xlsx')
     def _get_applied_actions(self):
         """根据条件筛选适用的规则，并按优先级排序"""
         applied_actions = [
@@ -226,10 +248,10 @@ class ConflictDetector:
             EventFunctionString += f'\ndef Event_{row.iloc[0]}(device_state):\n    return('
             for j in range(3, rowlen):
                 if pd.notna(row.iloc[j]) and row.iloc[j] != 'AND':
-                    EventFunctionString += ((''if j == 3 else ' and\n           ') + f'(device_state.{row.iloc[j]} == 1)')
+                    EventFunctionString += (
+                                ('' if j == 3 else ' and\n           ') + f'(device_state.{row.iloc[j]} == 1)')
             EventFunctionString += ')\n'
     RequirementVerifierFile.write(EventFunctionString)
-
 
     # rules_list
     RuleString = ''
@@ -260,8 +282,6 @@ class ConflictDetector:
                 RuleString += f'    ComplexRule(condition=Event_{row.iloc[0]},action=Action{j}.{Action2},priority={Priority}),\n'
                 Priority += 1
 
-
-
     RequirementVerifierFile.write(f'''
 rules = [
 {RuleString}
@@ -269,9 +289,11 @@ rules = [
 def main():
     detector = ConflictDetector(rules)
     ENVIRONMENT_FILE = 'CartesianProduct.xlsx'
-    BATCH_SIZE = 1000
+    BATCH_SIZE = 100
     skip_rows = 0
     times = 0
+    file_name = 'Result.xlsx'
+    Result.to_excel(file_name, index=False)
     while times != 2:
         try:
             EnvironmentDataFrame = pd.read_excel(ENVIRONMENT_FILE, sheet_name=0, nrows=BATCH_SIZE, skiprows=skip_rows)
@@ -291,5 +313,7 @@ if __name__ == '__main__':
     main()
 ''')
     RequirementVerifierFile.close()
+
+
 if __name__ == '__main__':
     main()
