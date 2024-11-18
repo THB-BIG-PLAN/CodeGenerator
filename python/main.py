@@ -5,16 +5,23 @@ import ScriptGenerator
 import os
 import sys
 import importlib.util
+import Initializer
+import Logic
 
 def main():
     # Step 1: Create the Dictionaries for Event and Condition
+    Initializer.main()
+    LogicFilePath = 'Logic'
     EVTFilePath = 'EVT'
     ConditionFilePath = 'Condition'
+    if not os.path.exists(LogicFilePath):
+        os.makedirs(LogicFilePath)
     if not os.path.exists(EVTFilePath):
         os.makedirs(EVTFilePath)
     if not os.path.exists(ConditionFilePath):
         os.makedirs(ConditionFilePath)
     # Step 2: Generate Event and Condition code Files
+    Logic.main()
     Condition.main()
     EVT.main()
 
@@ -23,8 +30,7 @@ def main():
 
     # Step 4: Generate requirement verifier script
     ScriptGenerator.main()
-    print("requirement_verifier.py generated successfully.")
-    input()
+
     # Step 5: Run the script to verify the requirements
 
     current_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
@@ -36,6 +42,8 @@ def main():
     spec.loader.exec_module(imported_module)
 
     imported_module.main()
+    print("The requirements check is completed and the results have been output to result.xlsx")
+    print("Press any key to exit")
     input()
 
 

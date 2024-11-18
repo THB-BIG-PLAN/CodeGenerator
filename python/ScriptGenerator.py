@@ -313,6 +313,9 @@ if __name__ == '__main__':
     main()
 ''')
     RequirementVerifierFile.close()
+    print("requirement_verifier.py generated successfully.")
+    print("Press any key to continue...")
+    input()
 
 
 if __name__ == '__main__':

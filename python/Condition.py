@@ -130,7 +130,8 @@ def write_source_file():
 def main():
     write_header_file()
     write_source_file()
-    print("按任意键继续")
+    print("Condition.h and Condition.c have been generated successfully.")
+    print("Press any key to continue...")
     input()
 
 

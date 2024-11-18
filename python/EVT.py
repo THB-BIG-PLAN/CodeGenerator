@@ -102,5 +102,6 @@ def main():
         write_event_header(evt_file)
 
     write_event_source()
-    print("生成完成，按任意键继续")
+    print('EVT.h and EVT.c files have been generated successfully.')
+    print('Press any key to continue...')
     input()
