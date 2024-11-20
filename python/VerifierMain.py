@@ -11,19 +11,19 @@ import Logic
 def main():
     # Step 1: Create the Dictionaries for Event and Condition
     Initializer.main()
-    LogicFilePath = 'Logic'
-    EVTFilePath = 'EVT'
-    ConditionFilePath = 'Condition'
-    if not os.path.exists(LogicFilePath):
-        os.makedirs(LogicFilePath)
-    if not os.path.exists(EVTFilePath):
-        os.makedirs(EVTFilePath)
-    if not os.path.exists(ConditionFilePath):
-        os.makedirs(ConditionFilePath)
-    # Step 2: Generate Event and Condition code Files
-    Logic.main()
-    Condition.main()
-    EVT.main()
+    # LogicFilePath = 'Logic'
+    # EVTFilePath = 'EVT'
+    # ConditionFilePath = 'Condition'
+    # if not os.path.exists(LogicFilePath):
+    #     os.makedirs(LogicFilePath)
+    # if not os.path.exists(EVTFilePath):
+    #     os.makedirs(EVTFilePath)
+    # if not os.path.exists(ConditionFilePath):
+    #     os.makedirs(ConditionFilePath)
+    # # Step 2: Generate Event and Condition code Files
+    # Logic.main()
+    # Condition.main()
+    # EVT.main()
 
     # Step 3: Generate Cartesian Product of Event and Condition
     CartesianProductCal.main()

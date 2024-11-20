@@ -56,7 +56,7 @@ def save_to_excel(answer_list, signal_name_list, file_name, sheet_name):
     """保存结果到Excel"""
     df = pd.DataFrame(answer_list, columns=signal_name_list)
     df.to_excel(file_name, sheet_name=sheet_name, index=False)
-
+    print("Cartesian Product saved to Excel successfully!")
 
 def main():
     df = read_data(CONFIG_PATH, 2)
@@ -65,4 +65,5 @@ def main():
     answer_list = compute_cartesian_product(signal_list)
     save_to_excel(answer_list, signal_name_list, "CartesianProduct.xlsx", "CartesianProduct")
 
-
+if __name__ == '__main__':
+    main()

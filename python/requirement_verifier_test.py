@@ -1,146 +1,285 @@
+# -*- coding: gbk -*-
 import pandas as pd
 from enum import Enum
 import warnings
+import openpyxl
+import cProfile
+import re
+from openpyxl import Workbook
+warnings.simplefilter(action='ignore', category=UserWarning)
+ResultList = []
+
+ErrorList = []
 
 
-class Action(Enum):
+class Action0(Enum):
     LGL_ON = 0
     LGL_OFF = 1
 
 
-WEL_NO_REQ = 0x0
-SEE_NO_REQ = 0x0
-VCU_GEAR_P = 0x1
-ESP_AUTO_HOLD = 0x1
-POL_STS_ON = 0x1
-POL_STS_OFF = 0x0
-LBL_STS_ON = 0x1
-LBL_STS_OFF = 0x0
-PRM_PWR_ON = 0x2
-EEP_LGL_ENABLE = 0x1
-EEP_LGL_DISABLE = 0x0
-PRM_PWR_OFF = 0x0
-
-
-# ÂÆö‰πâÂ§çÊùÇËßÑÂàôÁ±ª
 class State:
-    def __init__(self, BdcSeedsignal, BdcWlcmsignal, DLC_u8TurnLightTwice, EEP_LOGO_ENABLE_FLAG, EspAutoHoldActvSts,
-                 PLB_u8LBSts, PPL_boolPosnLampSts, PRM_u8PowerSts, VcuGearPosn):
+    def __init__(self, BdcSeedsignal, BdcWlcmsignal, DLC_u8TurnLightTwice,
+                 EEP_LOGO_ENABLE_FLAG, EspAutoHoldActvSts, PLB_u8LBSts,
+                 PPL_boolPosnLampSts, PRM_u8PowerSts, VcuGearPosn):
         self.current_state = {'BdcSeedsignal': BdcSeedsignal, 'BdcWlcmsignal': BdcWlcmsignal,
                               'DLC_u8TurnLightTwice': DLC_u8TurnLightTwice,
-                              'EEP_LOGO_ENABLE_FLAG': EEP_LOGO_ENABLE_FLAG,
-                              'EspAutoHoldActvSts': EspAutoHoldActvSts, 'PLB_u8LBSts': PLB_u8LBSts,
+                              'EEP_LOGO_ENABLE_FLAG': EEP_LOGO_ENABLE_FLAG, 'EspAutoHoldActvSts': EspAutoHoldActvSts,
+                              'PLB_u8LBSts': PLB_u8LBSts,
                               'PPL_boolPosnLampSts': PPL_boolPosnLampSts, 'PRM_u8PowerSts': PRM_u8PowerSts,
-                              'VcuGearPosn': VcuGearPosn, 'LGL_TIMEFLAGNUM': 0, }
-        self.previous_state = {k: 0 for k in self.current_state.keys()}  # Á°Æ‰øùÂàùÂßãÁä∂ÊÄÅ
+                              'VcuGearPosn': VcuGearPosn, 'TIMEFLAGNUM': 0}
+        self.previous_state = {k: 0 for k in self.current_state.keys()}
+        self.BDCSEEDSIGNAL_NEQ_0 = 0
+        self.BDCSEEDSIGNAL_CHANGETO_0 = 0
+        self.BDCSEEDSIGNAL_EQ_0 = 0
+        self.BDCWLCMSIGNAL_NEQ_0 = 0
+        self.BDCWLCMSIGNAL_EQ_0 = 0
+        self.DLC_U8TURNLIGHTTWICE_CHANGE_0XFF = 0
+        self.EEP_LOGO_ENABLE_FLAG_EQ_1 = 0
+        self.EEP_LOGO_ENABLE_FLAG_CHANGETO_0 = 0
+        self.EEP_LOGO_ENABLE_FLAG_EQ_0 = 0
+        self.ESPAUTOHOLDACTVSTS_EQ_0 = 0
+        self.ESPAUTOHOLDACTVSTS_EQ_1 = 0
+        self.PLB_U8LBSTS_EQ_0 = 0
+        self.PLB_U8LBSTS_EQ_1 = 0
+        self.PPL_BOOLPOSNLAMPSTS_EQ_0 = 0
+        self.PPL_BOOLPOSNLAMPSTS_EQ_1 = 0
+        self.PRM_U8POWERSTS_EQ_2 = 0
+        self.PRM_U8POWERSTS_CHANGETO_1 = 0
+        self.PRM_U8POWERSTS_CHANGETO_0 = 0
+        self.PRM_U8POWERSTS_EQ_0 = 0
+        self.VCUGEARPOSN_EQ_0 = 0
+        self.VCUGEARPOSN_EQ_1 = 0
+        self.TIMEFLAGNUM_EQ_0 = 0
 
+        if self.current_state['BdcSeedsignal'] != 0:
+            self.BDCSEEDSIGNAL_NEQ_0 = 1
+        if self.current_state['BdcSeedsignal'] != self.previous_state['BdcSeedsignal'] and self.current_state[
+            'BdcSeedsignal'] == 0:
+            self.BDCSEEDSIGNAL_CHANGETO_0 = 1
+        if self.current_state['BdcSeedsignal'] == 0:
+            self.BDCSEEDSIGNAL_EQ_0 = 1
+        if self.current_state['BdcWlcmsignal'] != 0:
+            self.BDCWLCMSIGNAL_NEQ_0 = 1
+        if self.current_state['BdcWlcmsignal'] == 0:
+            self.BDCWLCMSIGNAL_EQ_0 = 1
         if self.current_state['DLC_u8TurnLightTwice'] != self.previous_state['DLC_u8TurnLightTwice']:
-            self.current_state['LGL_TIMEFLAGNUM'] += 1
-        if self.current_state['PRM_u8PowerSts'] != PRM_PWR_ON and self.previous_state['PRM_u8PowerSts'] == PRM_PWR_ON:
-            self.current_state['LGL_TIMEFLAGNUM'] += 1
-        if (self.current_state['EEP_LOGO_ENABLE_FLAG'] == EEP_LGL_DISABLE and
-            self.previous_state['EEP_LOGO_ENABLE_FLAG'] == EEP_LGL_ENABLE):
-            self.current_state['LGL_TIMEFLAGNUM'] += 1
-        if self.current_state['BdcSeedsignal'] == SEE_NO_REQ and self.previous_state['BdcSeedsignal'] != SEE_NO_REQ:
-            self.current_state['LGL_TIMEFLAGNUM'] += 1
+            self.DLC_U8TURNLIGHTTWICE_CHANGE_0XFF = 1
+        if self.current_state['EEP_LOGO_ENABLE_FLAG'] == 1:
+            self.EEP_LOGO_ENABLE_FLAG_EQ_1 = 1
+        if self.current_state['EEP_LOGO_ENABLE_FLAG'] != self.previous_state['EEP_LOGO_ENABLE_FLAG'] and \
+                self.current_state['EEP_LOGO_ENABLE_FLAG'] == 0:
+            self.EEP_LOGO_ENABLE_FLAG_CHANGETO_0 = 1
+        if self.current_state['EEP_LOGO_ENABLE_FLAG'] == 0:
+            self.EEP_LOGO_ENABLE_FLAG_EQ_0 = 1
+        if self.current_state['EspAutoHoldActvSts'] == 0:
+            self.ESPAUTOHOLDACTVSTS_EQ_0 = 1
+        if self.current_state['EspAutoHoldActvSts'] == 1:
+            self.ESPAUTOHOLDACTVSTS_EQ_1 = 1
+        if self.current_state['EspAutoHoldActvSts'] == 1:
+            self.ESPAUTOHOLDACTVSTS_EQ_1 = 1
+        if self.current_state['PLB_u8LBSts'] == 0:
+            self.PLB_U8LBSTS_EQ_0 = 1
+        if self.current_state['PLB_u8LBSts'] == 1:
+            self.PLB_U8LBSTS_EQ_1 = 1
+        if self.current_state['PLB_u8LBSts'] == 1:
+            self.PLB_U8LBSTS_EQ_1 = 1
+        if self.current_state['PPL_boolPosnLampSts'] == 0:
+            self.PPL_BOOLPOSNLAMPSTS_EQ_0 = 1
+        if self.current_state['PPL_boolPosnLampSts'] == 1:
+            self.PPL_BOOLPOSNLAMPSTS_EQ_1 = 1
+        if self.current_state['PPL_boolPosnLampSts'] == 1:
+            self.PPL_BOOLPOSNLAMPSTS_EQ_1 = 1
+        if self.current_state['PRM_u8PowerSts'] == 2:
+            self.PRM_U8POWERSTS_EQ_2 = 1
+        if self.current_state['PRM_u8PowerSts'] != self.previous_state['PRM_u8PowerSts'] and self.current_state[
+            'PRM_u8PowerSts'] == 1:
+            self.PRM_U8POWERSTS_CHANGETO_1 = 1
+        if self.current_state['PRM_u8PowerSts'] != self.previous_state['PRM_u8PowerSts'] and self.current_state[
+            'PRM_u8PowerSts'] == 0:
+            self.PRM_U8POWERSTS_CHANGETO_0 = 1
+        if self.current_state['PRM_u8PowerSts'] == 0:
+            self.PRM_U8POWERSTS_EQ_0 = 1
+        if self.current_state['VcuGearPosn'] == 0:
+            self.VCUGEARPOSN_EQ_0 = 1
+        if self.current_state['VcuGearPosn'] == 1:
+            self.VCUGEARPOSN_EQ_1 = 1
+        if self.current_state['VcuGearPosn'] == 1:
+            self.VCUGEARPOSN_EQ_1 = 1
 
-    def update_state(self, BdcSeedsignal, BdcWlcmsignal, DLC_u8TurnLightTwice, EEP_LOGO_ENABLE_FLAG, EspAutoHoldActvSts,
-                     PLB_u8LBSts, PPL_boolPosnLampSts, PRM_u8PowerSts, VcuGearPosn):
+        if ((self.DLC_U8TURNLIGHTTWICE_CHANGE_0XFF == 1)) and ((self.DLC_U8TURNLIGHTTWICE_CHANGE_0XFF == 1)):
+            self.current_state["TIMEFLAGNUM"] += 1
+        if ((self.PRM_U8POWERSTS_CHANGETO_1 == 1) or (self.PRM_U8POWERSTS_CHANGETO_0 == 1)) and (
+        (self.EEP_LOGO_ENABLE_FLAG_EQ_1 == 1)):
+            self.current_state["TIMEFLAGNUM"] += 1
+        if ((self.EEP_LOGO_ENABLE_FLAG_CHANGETO_0 == 1)) and ((self.PRM_U8POWERSTS_EQ_2 == 1)):
+            self.current_state["TIMEFLAGNUM"] += 1
+        if ((self.BDCSEEDSIGNAL_CHANGETO_0 == 1)) and ((self.BDCSEEDSIGNAL_CHANGETO_0 == 1)):
+            self.current_state["TIMEFLAGNUM"] += 1
+        if self.current_state["TIMEFLAGNUM"] == 0:
+            self.TIMEFLAGNUM_EQ_0 = 1
+
+    def update_state(self, BdcSeedsignal, BdcWlcmsignal, DLC_u8TurnLightTwice,
+                     EEP_LOGO_ENABLE_FLAG, EspAutoHoldActvSts, PLB_u8LBSts,
+                     PPL_boolPosnLampSts, PRM_u8PowerSts, VcuGearPosn):
         self.previous_state = self.current_state.copy()
         self.current_state = {'BdcSeedsignal': BdcSeedsignal, 'BdcWlcmsignal': BdcWlcmsignal,
                               'DLC_u8TurnLightTwice': DLC_u8TurnLightTwice,
-                              'EEP_LOGO_ENABLE_FLAG': EEP_LOGO_ENABLE_FLAG,
-                              'EspAutoHoldActvSts': EspAutoHoldActvSts, 'PLB_u8LBSts': PLB_u8LBSts,
+                              'EEP_LOGO_ENABLE_FLAG': EEP_LOGO_ENABLE_FLAG, 'EspAutoHoldActvSts': EspAutoHoldActvSts,
+                              'PLB_u8LBSts': PLB_u8LBSts,
                               'PPL_boolPosnLampSts': PPL_boolPosnLampSts, 'PRM_u8PowerSts': PRM_u8PowerSts,
-                              'VcuGearPosn': VcuGearPosn,
-                              'LGL_TIMEFLAGNUM': 0}
-        # Â¢ûÈáèÈÄªËæë
+                              'VcuGearPosn': VcuGearPosn, 'TIMEFLAGNUM': 0}
+
+        self.BDCSEEDSIGNAL_NEQ_0 = 0
+        self.BDCSEEDSIGNAL_CHANGETO_0 = 0
+        self.BDCSEEDSIGNAL_EQ_0 = 0
+        self.BDCWLCMSIGNAL_NEQ_0 = 0
+        self.BDCWLCMSIGNAL_EQ_0 = 0
+        self.DLC_U8TURNLIGHTTWICE_CHANGE_0XFF = 0
+        self.EEP_LOGO_ENABLE_FLAG_EQ_1 = 0
+        self.EEP_LOGO_ENABLE_FLAG_CHANGETO_0 = 0
+        self.EEP_LOGO_ENABLE_FLAG_EQ_0 = 0
+        self.ESPAUTOHOLDACTVSTS_EQ_0 = 0
+        self.ESPAUTOHOLDACTVSTS_EQ_1 = 0
+        self.PLB_U8LBSTS_EQ_0 = 0
+        self.PLB_U8LBSTS_EQ_1 = 0
+        self.PPL_BOOLPOSNLAMPSTS_EQ_0 = 0
+        self.PPL_BOOLPOSNLAMPSTS_EQ_1 = 0
+        self.PRM_U8POWERSTS_EQ_2 = 0
+        self.PRM_U8POWERSTS_CHANGETO_1 = 0
+        self.PRM_U8POWERSTS_CHANGETO_0 = 0
+        self.PRM_U8POWERSTS_EQ_0 = 0
+        self.VCUGEARPOSN_EQ_0 = 0
+        self.VCUGEARPOSN_EQ_1 = 0
+        self.TIMEFLAGNUM_EQ_0 = 0
+
+        if self.current_state['BdcSeedsignal'] != 0:
+            self.BDCSEEDSIGNAL_NEQ_0 = 1
+        if self.current_state['BdcSeedsignal'] != self.previous_state['BdcSeedsignal'] and self.current_state[
+            'BdcSeedsignal'] == 0:
+            self.BDCSEEDSIGNAL_CHANGETO_0 = 1
+        if self.current_state['BdcSeedsignal'] == 0:
+            self.BDCSEEDSIGNAL_EQ_0 = 1
+        if self.current_state['BdcWlcmsignal'] != 0:
+            self.BDCWLCMSIGNAL_NEQ_0 = 1
+        if self.current_state['BdcWlcmsignal'] == 0:
+            self.BDCWLCMSIGNAL_EQ_0 = 1
         if self.current_state['DLC_u8TurnLightTwice'] != self.previous_state['DLC_u8TurnLightTwice']:
-            self.current_state['LGL_TIMEFLAGNUM'] += 1
-        if self.current_state['PRM_u8PowerSts'] != PRM_PWR_ON and self.previous_state['PRM_u8PowerSts'] == PRM_PWR_ON:
-            self.current_state['LGL_TIMEFLAGNUM'] += 1
-        if (self.current_state['EEP_LOGO_ENABLE_FLAG'] == EEP_LGL_DISABLE and
-                self.previous_state['EEP_LOGO_ENABLE_FLAG'] == EEP_LGL_ENABLE):
-            self.current_state['LGL_TIMEFLAGNUM'] += 1
-        if self.current_state['BdcSeedsignal'] == SEE_NO_REQ and self.previous_state['BdcSeedsignal'] != SEE_NO_REQ:
-            self.current_state['LGL_TIMEFLAGNUM'] += 1
+            self.DLC_U8TURNLIGHTTWICE_CHANGE_0XFF = 1
+        if self.current_state['EEP_LOGO_ENABLE_FLAG'] == 1:
+            self.EEP_LOGO_ENABLE_FLAG_EQ_1 = 1
+        if self.current_state['EEP_LOGO_ENABLE_FLAG'] != self.previous_state['EEP_LOGO_ENABLE_FLAG'] and \
+                self.current_state['EEP_LOGO_ENABLE_FLAG'] == 0:
+            self.EEP_LOGO_ENABLE_FLAG_CHANGETO_0 = 1
+        if self.current_state['EEP_LOGO_ENABLE_FLAG'] == 0:
+            self.EEP_LOGO_ENABLE_FLAG_EQ_0 = 1
+        if self.current_state['EspAutoHoldActvSts'] == 0:
+            self.ESPAUTOHOLDACTVSTS_EQ_0 = 1
+        if self.current_state['EspAutoHoldActvSts'] == 1:
+            self.ESPAUTOHOLDACTVSTS_EQ_1 = 1
+        if self.current_state['EspAutoHoldActvSts'] == 1:
+            self.ESPAUTOHOLDACTVSTS_EQ_1 = 1
+        if self.current_state['PLB_u8LBSts'] == 0:
+            self.PLB_U8LBSTS_EQ_0 = 1
+        if self.current_state['PLB_u8LBSts'] == 1:
+            self.PLB_U8LBSTS_EQ_1 = 1
+        if self.current_state['PLB_u8LBSts'] == 1:
+            self.PLB_U8LBSTS_EQ_1 = 1
+        if self.current_state['PPL_boolPosnLampSts'] == 0:
+            self.PPL_BOOLPOSNLAMPSTS_EQ_0 = 1
+        if self.current_state['PPL_boolPosnLampSts'] == 1:
+            self.PPL_BOOLPOSNLAMPSTS_EQ_1 = 1
+        if self.current_state['PPL_boolPosnLampSts'] == 1:
+            self.PPL_BOOLPOSNLAMPSTS_EQ_1 = 1
+        if self.current_state['PRM_u8PowerSts'] == 2:
+            self.PRM_U8POWERSTS_EQ_2 = 1
+        if self.current_state['PRM_u8PowerSts'] != self.previous_state['PRM_u8PowerSts'] and self.current_state[
+            'PRM_u8PowerSts'] == 1:
+            self.PRM_U8POWERSTS_CHANGETO_1 = 1
+        if self.current_state['PRM_u8PowerSts'] != self.previous_state['PRM_u8PowerSts'] and self.current_state[
+            'PRM_u8PowerSts'] == 0:
+            self.PRM_U8POWERSTS_CHANGETO_0 = 1
+        if self.current_state['PRM_u8PowerSts'] == 0:
+            self.PRM_U8POWERSTS_EQ_0 = 1
+        if self.current_state['VcuGearPosn'] == 0:
+            self.VCUGEARPOSN_EQ_0 = 1
+        if self.current_state['VcuGearPosn'] == 1:
+            self.VCUGEARPOSN_EQ_1 = 1
+        if self.current_state['VcuGearPosn'] == 1:
+            self.VCUGEARPOSN_EQ_1 = 1
+
+        if ((self.DLC_U8TURNLIGHTTWICE_CHANGE_0XFF == 1)) and ((self.DLC_U8TURNLIGHTTWICE_CHANGE_0XFF == 1)):
+            self.current_state["TIMEFLAGNUM"] += 1
+        if ((self.PRM_U8POWERSTS_CHANGETO_1 == 1) or (self.PRM_U8POWERSTS_CHANGETO_0 == 1)) and (
+        (self.EEP_LOGO_ENABLE_FLAG_EQ_1 == 1)):
+            self.current_state["TIMEFLAGNUM"] += 1
+        if ((self.EEP_LOGO_ENABLE_FLAG_CHANGETO_0 == 1)) and ((self.PRM_U8POWERSTS_EQ_2 == 1)):
+            self.current_state["TIMEFLAGNUM"] += 1
+        if ((self.BDCSEEDSIGNAL_CHANGETO_0 == 1)) and ((self.BDCSEEDSIGNAL_CHANGETO_0 == 1)):
+            self.current_state["TIMEFLAGNUM"] += 1
+        if self.current_state["TIMEFLAGNUM"] == 0:
+            self.TIMEFLAGNUM_EQ_0 = 1
 
     def get_current(self, param):
-        """Ëé∑ÂèñÂΩìÂâçÁä∂ÊÄÅÂÄº"""
+        """ªÒ»°µ±«∞◊¥Ã¨÷µ"""
         return self.current_state.get(param)
 
     def get_previous(self, param):
-        """Ëé∑ÂèñÂâçÊÄÅÁä∂ÊÄÅÂÄº"""
+        """ªÒ»°«∞Ã¨◊¥Ã¨÷µ"""
         return self.previous_state.get(param)
-
 
 
 class ComplexRule:
     def __init__(self, condition, action, priority=0):
         """
-        :param condition: Áî®‰∫éÊ£ÄÊü•ÊòØÂê¶Êª°Ë∂≥Êù°‰ª∂ÁöÑÂáΩÊï∞
-        :param action: Âä®‰ΩúÔºàACTION_ON Êàñ ACTION_OFFÔºâ
-        :param priority: ‰ºòÂÖàÁ∫ßÔºåÊï∞ÂÄºË∂äÂ∞è‰ºòÂÖàÁ∫ßË∂äÈ´ò
+        :param condition: ”√”⁄ºÏ≤È «∑Ò¬˙◊„Ãıº˛µƒ∫Ø ˝
+        :param action: ∂Ø◊˜£®ACTION_ON ªÚ ACTION_OFF£©
+        :param priority: ”≈œ»º∂£¨ ˝÷µ‘Ω–°”≈œ»º∂‘Ω∏ﬂ
         """
         self.condition = condition
         self.action = action
         self.priority = priority
 
     def applies_to(self, state):
-        """Âà§Êñ≠ËßÑÂàôÊòØÂê¶ÈÄÇÁî®‰∫éÂΩìÂâçÁöÑËÆæÂ§áÁä∂ÊÄÅ"""
+        """≈–∂œπÊ‘Ú «∑Ò  ”√”⁄µ±«∞µƒ…Ë±∏◊¥Ã¨"""
         return self.condition(state)
 
 
 class ConflictDetector:
     def __init__(self, rules):
         self.rules = rules
-        self.device_state = State(0, 0, 0, 0, 0, 0, 0, 0, 0)  # ÂàùÂßãÂåñËÆæÂ§áÁä∂ÊÄÅ
+        self.device_state = State(0, 0, 0, 0, 0, 0, 0, 0, 0)
 
-    def detect_and_execute(self, BdcSeedsignal, BdcWlcmsignal, DLC_u8TurnLightTwice, EEP_LOGO_ENABLE_FLAG,
-                           EspAutoHoldActvSts,
-                           PLB_u8LBSts, PPL_boolPosnLampSts, PRM_u8PowerSts, VcuGearPosn):
-        self.device_state.update_state(BdcSeedsignal, BdcWlcmsignal, DLC_u8TurnLightTwice, EEP_LOGO_ENABLE_FLAG,
-                                       EspAutoHoldActvSts, PLB_u8LBSts, PPL_boolPosnLampSts, PRM_u8PowerSts,
-                                       VcuGearPosn)
+    def detect_and_execute(self,data_tuple):
+        BdcSeedsignal, BdcWlcmsignal, DLC_u8TurnLightTwice,EEP_LOGO_ENABLE_FLAG, EspAutoHoldActvSts, PLB_u8LBSts,PPL_boolPosnLampSts, PRM_u8PowerSts, VcuGearPosn = data_tuple
+        self.device_state.update_state(BdcSeedsignal, BdcWlcmsignal, DLC_u8TurnLightTwice,
+                                       EEP_LOGO_ENABLE_FLAG, EspAutoHoldActvSts, PLB_u8LBSts,
+                                       PPL_boolPosnLampSts, PRM_u8PowerSts, VcuGearPosn)
         applied_actions = self._get_applied_actions()
+        ResultDict = self.device_state.current_state.copy()
         if not applied_actions:
-            print(f"BdcSeedsignal :{BdcSeedsignal}\n"
-                  f"BdcWlcmsignal :{BdcWlcmsignal}\n"
-                  f"DLC_u8TurnLightTwice :{DLC_u8TurnLightTwice}\n"
-                  f"EEP_LOGO_ENABLE_FLAG: {EEP_LOGO_ENABLE_FLAG}\n"
-                  f"EspAutoHoldActvSts :{EspAutoHoldActvSts}\n"
-                  f"PLB_u8LBSts :{PLB_u8LBSts}\n"
-                  f"PPL_boolPosnLampSts :{PPL_boolPosnLampSts}\n"
-                  f"PRM_u8PowerSts :{PRM_u8PowerSts}\n"
-                  f"VcuGearPosn :{VcuGearPosn}Êó∂ÔºåÊó†ËßÑÂàôÈÄÇÁî®\n")
-            return False
+            ResultDict['Result'] = 'ŒﬁπÊ‘Ú  ”√'
         else:
             if self._has_conflict(applied_actions):
-                print(f"BdcSeedsignal :{BdcSeedsignal}\n"
-                      f"BdcWlcmsignal :{BdcWlcmsignal}\n "
-                      f"DLC_u8TurnLightTwice :{DLC_u8TurnLightTwice}\n"
-                      f"EEP_LOGO_ENABLE_FLAG: {EEP_LOGO_ENABLE_FLAG}\n"
-                      f"EspAutoHoldActvSts :{EspAutoHoldActvSts}\n"
-                      f"PLB_u8LBSts :{PLB_u8LBSts}\n"
-                      f"PPL_boolPosnLampSts :{PPL_boolPosnLampSts}\n"
-                      f"PRM_u8PowerSts :{PRM_u8PowerSts}\n"
-                      f"VcuGearPosn :{VcuGearPosn}Êó∂ÔºåÂèØËÉΩ‰∫ßÁîüÂÜ≤Á™Å\n")
-                return True
+                ErrorDict = {}
+                for key, value in self.device_state.current_state.items():
+                    ErrorDict[f'{key}'] = value
+                ResultDict['Result'] = 'ø…ƒ‹≤˙…˙≥ÂÕª'
+                ErrorDict['Result'] = 'ø…ƒ‹≤˙…˙≥ÂÕª'
+                ErrorList.append(ErrorDict)
             else:
                 chosen_action = applied_actions[0][0]
-                print(f"BdcSeedsignal :{BdcSeedsignal}\n"
-                      f"BdcWlcmsignal :{BdcWlcmsignal}\n"
-                      f"DLC_u8TurnLightTwice :{DLC_u8TurnLightTwice}\n"
-                      f"EEP_LOGO_ENABLE_FLAG: {EEP_LOGO_ENABLE_FLAG}\n"
-                      f"EspAutoHoldActvSts :{EspAutoHoldActvSts}\n"
-                      f"PLB_u8LBSts :{PLB_u8LBSts}\n"
-                      f"PPL_boolPosnLampSts :{PPL_boolPosnLampSts}\n"
-                      f"PRM_u8PowerSts :{PRM_u8PowerSts}\n"
-                      f"VcuGearPosn :{VcuGearPosn}Êó∂ÔºåÊâßË°å{chosen_action.name}\n")
-                return False
+                ResultDict['Result'] = chosen_action
+        self.Result_Add_To_List(ResultDict)
+
+    def Result_Add_To_List(self, ResultDict):
+        row = []
+        for col_num, (cell_key, cell_value) in enumerate(ResultDict.items()):
+            row.append(cell_value)
+        ResultList.append(row)
+
 
     def _get_applied_actions(self):
-        """Ê†πÊçÆÊù°‰ª∂Á≠õÈÄâÈÄÇÁî®ÁöÑËßÑÂàôÔºåÂπ∂Êåâ‰ºòÂÖàÁ∫ßÊéíÂ∫è"""
+        """∏˘æ›Ãıº˛…∏—°  ”√µƒπÊ‘Ú£¨≤¢∞¥”≈œ»º∂≈≈–Ú"""
         applied_actions = [
             (rule.action, rule.priority)
             for rule in self.rules
@@ -149,86 +288,120 @@ class ConflictDetector:
         return sorted(applied_actions, key=lambda x: x[1])
 
     def _has_conflict(self, applied_actions):
-        """Ê£ÄÊü•ÊòØÂê¶Â≠òÂú®ÂºÄÁÅØÂíåÂÖ≥ÁÅØÊìç‰ΩúÂÜ≤Á™Å"""
+        """ºÏ≤È «∑Ò¥Ê‘⁄ø™µ∆∫Õπÿµ∆≤Ÿ◊˜≥ÂÕª"""
         actions = {action for action, _ in applied_actions}
-        return Action.LGL_ON in actions and Action.LGL_OFF in actions
+        return (Action0.LGL_ON in actions and Action0.LGL_OFF in actions)
 
 
-def Event1(device_state):
-    return device_state.get_current("BdcSeedsignal") != SEE_NO_REQ
+def Event_LGL_SEE_ON(device_state):
+    return ((device_state.BDCSEEDSIGNAL_NEQ_0 == 1))
 
 
-
-def Event2(device_state):
-    return device_state.get_current("BdcWlcmsignal") != WEL_NO_REQ
-
-
-def Event3(device_state):
-    return (device_state.get_current("VcuGearPosn") == VCU_GEAR_P and
-            device_state.get_current("PPL_boolPosnLampSts") == POL_STS_ON)
+def Event_LGL_WEL_ON(device_state):
+    return ((device_state.BDCWLCMSIGNAL_NEQ_0 == 1))
 
 
-def Event4(device_state):
-    return (device_state.get_current("VcuGearPosn") == VCU_GEAR_P and
-            device_state.get_current("PLB_u8LBSts") == LBL_STS_ON)
+def Event_LGL_VCU_POL_ON(device_state):
+    return ((device_state.VCUGEARPOSN_EQ_1 == 1) and
+            (device_state.PPL_BOOLPOSNLAMPSTS_EQ_1 == 1))
 
 
-def Event5(device_state):
-    return (device_state.get_current("EspAutoHoldActvSts") == ESP_AUTO_HOLD and
-            device_state.get_current("PPL_boolPosnLampSts") == POL_STS_ON)
+def Event_LGL_VCU_LBL_ON(device_state):
+    return ((device_state.VCUGEARPOSN_EQ_1 == 1) and
+            (device_state.PLB_U8LBSTS_EQ_1 == 1))
 
 
-def Event6(device_state):
-    return (device_state.get_current("EspAutoHoldActvSts") == ESP_AUTO_HOLD and
-            device_state.get_current("PLB_u8LBSts") == LBL_STS_ON)
+def Event_LGL_ESP_POL_ON(device_state):
+    return ((device_state.ESPAUTOHOLDACTVSTS_EQ_1 == 1) and
+            (device_state.PPL_BOOLPOSNLAMPSTS_EQ_1 == 1))
 
 
-def Event7(device_state):
-    return (device_state.get_current("PRM_u8PowerSts") == PRM_PWR_ON and
-            device_state.get_current("EEP_LOGO_ENABLE_FLAG") == EEP_LGL_ENABLE)
+def Event_LGL_ESP_LBL_ON(device_state):
+    return ((device_state.ESPAUTOHOLDACTVSTS_EQ_1 == 1) and
+            (device_state.PLB_U8LBSTS_EQ_1 == 1))
 
 
-def Event8(device_state):
-    return (device_state.get_current("DLC_u8TurnLightTwice") !=
-            device_state.get_previous("DLC_u8TurnLightTwice"))
+def Event_LGL_PRM_EEP_ON(device_state):
+    return ((device_state.PRM_U8POWERSTS_EQ_2 == 1) and
+            (device_state.EEP_LOGO_ENABLE_FLAG_EQ_1 == 1))
 
 
-def Event9(device_state):
-    return (device_state.get_current("BdcSeedsignal") == SEE_NO_REQ and
-            device_state.get_current("BdcWlcmsignal") == WEL_NO_REQ and
-            device_state.get_current("VcuGearPosn") == 0 and
-            device_state.get_current("PPL_boolPosnLampSts") == POL_STS_OFF and
-            device_state.get_current("PLB_u8LBSts") == LBL_STS_OFF and
-            device_state.get_current("EspAutoHoldActvSts") == 0 and
-            device_state.get_current("EEP_LOGO_ENABLE_FLAG") == EEP_LGL_DISABLE and
-            device_state.get_current("LGL_TIMEFLAGNUM") == 0)
+def Event_LGL_DLC_TUL_ON(device_state):
+    return ((device_state.DLC_U8TURNLIGHTTWICE_CHANGE_0XFF == 1))
 
 
-def Event10(device_state):
-    return (device_state.get_current("BdcSeedsignal") == SEE_NO_REQ and
-            device_state.get_current("BdcWlcmsignal") == WEL_NO_REQ and
-            device_state.get_current("VcuGearPosn") == 0 and
-            device_state.get_current("PPL_boolPosnLampSts") == POL_STS_OFF and
-            device_state.get_current("PLB_u8LBSts") == LBL_STS_OFF and
-            device_state.get_current("EspAutoHoldActvSts") == 0 and
-            device_state.get_current("PRM_u8PowerSts") == PRM_PWR_OFF and
-            device_state.get_current("LGL_TIMEFLAGNUM") == 0)
+def Event_LGL_Normal_OFF1(device_state):
+    return ((device_state.BDCSEEDSIGNAL_EQ_0 == 1) and
+            (device_state.BDCWLCMSIGNAL_EQ_0 == 1) and
+            (device_state.VCUGEARPOSN_EQ_0 == 1) and
+            (device_state.PPL_BOOLPOSNLAMPSTS_EQ_0 == 1) and
+            (device_state.PLB_U8LBSTS_EQ_0 == 1) and
+            (device_state.ESPAUTOHOLDACTVSTS_EQ_0 == 1) and
+            (device_state.PRM_U8POWERSTS_CHANGETO_0 == 1) and
+            (device_state.TIMEFLAGNUM_EQ_0 == 1))
+
+
+def Event_LGL_Normal_OFF2(device_state):
+    return ((device_state.BDCSEEDSIGNAL_EQ_0 == 1) and
+            (device_state.BDCWLCMSIGNAL_EQ_0 == 1) and
+            (device_state.VCUGEARPOSN_EQ_0 == 1) and
+            (device_state.PPL_BOOLPOSNLAMPSTS_EQ_0 == 1) and
+            (device_state.PLB_U8LBSTS_EQ_0 == 1) and
+            (device_state.ESPAUTOHOLDACTVSTS_EQ_0 == 1) and
+            (device_state.EEP_LOGO_ENABLE_FLAG_EQ_0 == 1) and
+            (device_state.TIMEFLAGNUM_EQ_0 == 1))
 
 
 rules = [
-    ComplexRule(condition=Event1, action=Action.LGL_ON, priority=1),
-    ComplexRule(condition=Event2, action=Action.LGL_ON, priority=2),
-    ComplexRule(condition=Event3, action=Action.LGL_ON, priority=3),
-    ComplexRule(condition=Event4, action=Action.LGL_ON, priority=4),
-    ComplexRule(condition=Event5, action=Action.LGL_ON, priority=5),
-    ComplexRule(condition=Event6, action=Action.LGL_ON, priority=6),
-    ComplexRule(condition=Event7, action=Action.LGL_ON, priority=7),
-    ComplexRule(condition=Event8, action=Action.LGL_ON, priority=8),
-    ComplexRule(condition=Event9, action=Action.LGL_OFF, priority=9),
-    ComplexRule(condition=Event10, action=Action.LGL_OFF, priority=10),
+    ComplexRule(condition=Event_LGL_SEE_ON, action=Action0.LGL_ON, priority=0),
+    ComplexRule(condition=Event_LGL_WEL_ON, action=Action0.LGL_ON, priority=1),
+    ComplexRule(condition=Event_LGL_VCU_POL_ON, action=Action0.LGL_ON, priority=2),
+    ComplexRule(condition=Event_LGL_VCU_LBL_ON, action=Action0.LGL_ON, priority=3),
+    ComplexRule(condition=Event_LGL_ESP_POL_ON, action=Action0.LGL_ON, priority=4),
+    ComplexRule(condition=Event_LGL_ESP_LBL_ON, action=Action0.LGL_ON, priority=5),
+    ComplexRule(condition=Event_LGL_PRM_EEP_ON, action=Action0.LGL_ON, priority=6),
+    ComplexRule(condition=Event_LGL_DLC_TUL_ON, action=Action0.LGL_ON, priority=7),
+    ComplexRule(condition=Event_LGL_Normal_OFF1, action=Action0.LGL_OFF, priority=8),
+    ComplexRule(condition=Event_LGL_Normal_OFF2, action=Action0.LGL_OFF, priority=9),
+
 ]
 
-detector = ConflictDetector(rules)
-detector.detect_and_execute(0, 0, 254, 0, 0, 0, 0, 0, 0)
-detector.detect_and_execute(0, 0, 255, 2, 1, 2, 1, 1, 0)
-detector.detect_and_execute(0, 0, 255, 0,0,0, 0,0,0)
+def Save_Result():
+    ResultDataFrame = pd.DataFrame(ResultList, columns=['BdcSeedsignal', 'BdcWlcmsignal', 'DLC_u8TurnLightTwice', 'EEP_LOGO_ENABLE_FLAG', 'EspAutoHoldActvSts', 'PLB_u8LBSts', 'PPL_boolPosnLampSts', 'PRM_u8PowerSts', 'VcuGearPosn', 'TIMEFLAGNUM', 'Result'])
+    ResultDataFrame.to_excel('Result.xlsx', sheet_name='Result', index=False)
+
+def main():
+    detector = ConflictDetector(rules)
+    ENVIRONMENT_FILE = 'CartesianProduct.xlsx'
+    BATCH_SIZE = 10000
+    skip_rows = 0
+    times = 0
+    while True:
+        try:
+            if times != 0:
+                EnvironmentDataFrame = pd.read_excel(ENVIRONMENT_FILE, sheet_name=0, nrows=BATCH_SIZE, skiprows=skip_rows , header=None)
+            else:
+                EnvironmentDataFrame = pd.read_excel(ENVIRONMENT_FILE, sheet_name=0, nrows=BATCH_SIZE, skiprows=skip_rows)
+            if EnvironmentDataFrame.empty:
+                break
+            for index, row in EnvironmentDataFrame.iterrows():
+                detector.detect_and_execute(tuple(row))
+            skip_rows += BATCH_SIZE
+            times += 1
+        except FileNotFoundError:
+            print("Œƒº˛≤ª¥Ê‘⁄")
+            break
+    Save_Result()
+    if not ErrorList:
+        print("No errors")
+    else:
+        for ErrorDict in ErrorList:
+            print(ErrorDict)
+
+
+if __name__ == '__main__':
+    profiler = cProfile.Profile()
+    profiler.enable()
+    main()
+    profiler.disable()
+    profiler.print_stats(sort='cumulative')

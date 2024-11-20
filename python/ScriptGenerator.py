@@ -20,6 +20,7 @@ import openpyxl
 import re
 warnings.simplefilter(action='ignore', category=UserWarning)
 from openpyxl import Workbook
+ErrorList = []
 Result = pd.DataFrame(columns=['''
 
     for i, row in SignalDataFrame.iterrows():
@@ -196,21 +197,17 @@ class ConflictDetector:
         applied_actions = self._get_applied_actions()
         ResultDict = self.device_state.current_state.copy()
         if not applied_actions:
-            for key, value in self.device_state.current_state.items():
-                print(f'{{key}} = {{value}}')
             ResultDict['Result'] = '无规则适用'
-            print('无规则适用\\n')
         else:
             if self._has_conflict(applied_actions):
+                ErrorDict = {{}}
                 for key, value in self.device_state.current_state.items():
-                    print(f'{{key}} = {{value}}')
+                    ErrorDict[f'{{key}}'] = value
                 ResultDict['Result'] = '可能产生冲突'
-                print('可能产生冲突\\n')
+                ErrorDict['Result'] = '可能产生冲突'
+                ErrorList.append(ErrorDict)
             else:
                 chosen_action = applied_actions[0][0]
-                for key, value in self.device_state.current_state.items():
-                    print(f'{{key}} = {{value}}')
-                print(f'执行动作：{{chosen_action}}\\n')
                 ResultDict['Result'] = chosen_action
         self.Write_Result(ResultDict)
     def Write_Result(self,ResultDict):
@@ -289,12 +286,12 @@ rules = [
 def main():
     detector = ConflictDetector(rules)
     ENVIRONMENT_FILE = 'CartesianProduct.xlsx'
-    BATCH_SIZE = 100
+    BATCH_SIZE = 10000
     skip_rows = 0
     times = 0
     file_name = 'Result.xlsx'
     Result.to_excel(file_name, index=False)
-    while times != 2:
+    while True:
         try:
             EnvironmentDataFrame = pd.read_excel(ENVIRONMENT_FILE, sheet_name=0, nrows=BATCH_SIZE, skiprows=skip_rows)
             if EnvironmentDataFrame.empty:
@@ -307,7 +304,12 @@ def main():
         except FileNotFoundError:
             print("文件不存在")
             break
-                
+    if not ErrorList:
+        print("No errors")
+    else:
+        for ErrorDict in ErrorList:
+            print(ErrorDict)
+           
 
 if __name__ == '__main__':
     main()

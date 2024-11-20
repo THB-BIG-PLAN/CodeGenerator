@@ -28,26 +28,26 @@ HEADER_TEMPLATE = '''
 #define CHANGETO 7
 #define CHANGE 8
 
-typedef struct Condition {{
+typedef struct Condition {
     T_u8 Threshold;
     T_u8 Symbol;
     void (*EVT)();
     T_u8 ConditionID;
-}} Condition;
+} Condition;
 
-typedef struct SignalCondition {{
+typedef struct SignalCondition {
     T_u8 Signal;
     T_u8 Len;
     const Condition* Condition;
-}} SignalCondition;
+} SignalCondition;
 
-typedef struct EVT_FLAG {{
+typedef struct EVT_FLAG {
     T_u8 SignalNum[SIGNAL_NUM];
     T_u8 SignalPreNum[SIGNAL_NUM];
     T_u8 LGL_TimeOutFlagNum;
     T_bit TimeOutFlag[TIMEOUT_NUM];
     T_bit ConditionFlag[CONDITION_NUM];
-}} EVT_FLAG;
+} EVT_FLAG;
 
 extern EVT_FLAG* EVT_flag;
 static const SignalCondition SignalConditionArray[SIGNAL_NUM];

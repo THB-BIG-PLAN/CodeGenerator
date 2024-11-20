@@ -105,3 +105,6 @@ def main():
     print('EVT.h and EVT.c files have been generated successfully.')
     print('Press any key to continue...')
     input()
+
+if __name__ == '__main__':
+    main()
