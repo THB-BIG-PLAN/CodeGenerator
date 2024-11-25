@@ -207,7 +207,7 @@ class State:
         if self.current_state['VcuGearPosn'] == 1:
             self.VCUGEARPOSN_EQ_1 = 1
 
-        if ((self.DLC_U8TURNLIGHTTWICE_CHANGE_0XFF == 1)) and ((self.DLC_U8TURNLIGHTTWICE_CHANGE_0XFF == 1)):
+        if (self.DLC_U8TURNLIGHTTWICE_CHANGE_0XFF == 1) and (self.DLC_U8TURNLIGHTTWICE_CHANGE_0XFF == 1):
             self.current_state["TIMEFLAGNUM"] += 1
         if ((self.PRM_U8POWERSTS_CHANGETO_1 == 1) or (self.PRM_U8POWERSTS_CHANGETO_0 == 1)) and (
         (self.EEP_LOGO_ENABLE_FLAG_EQ_1 == 1)):
