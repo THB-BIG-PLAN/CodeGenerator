@@ -19,6 +19,11 @@ HEADER_TEMPLATE = '''
 #include "EVT/Event/EVT.h"
 #include "EVT/Logic/Logic.h"
 #include <sgn/signal_api.h>
+#include <stdbool.h>
+
+#define CONDITION_TYPE_NUMBER false
+#define CONDITION_TYPE_SIGNAL true
+
 #define EQ 1
 #define NEQ 2
 #define GREATER 3
@@ -29,6 +34,7 @@ HEADER_TEMPLATE = '''
 #define CHANGE 8
 
 typedef struct Condition {
+    bool Type;
     T_u8 Threshold;
     T_u8 Symbol;
     void (*EVT)();
@@ -52,7 +58,6 @@ typedef struct EVT_FLAG {
 extern EVT_FLAG* EVT_flag;
 static const SignalCondition SignalConditionArray[SIGNAL_NUM];
 static const Condition TimeOutActionArray[TIMEOUT_NUM];
-#endif /* CONDITION_H_ */
 '''
 
 
@@ -71,17 +76,19 @@ def write_header_file():
     with open(HEADER_FILE_PATH, "w") as file:
         file.write(HEADER_TEMPLATE)
         for index, row in df_signal.iterrows():
-            file.write(f'#define {row.iloc[1]} {index}\n')
+            file.write(f'#define {row.loc["Macro"]} {index}\n')
         file.write("\n")
         for index, row in df_condition.iterrows():
-            file.write(f'#define {row.iloc[0]} {index}\n')
+            file.write(f'#define {row.loc["ConditionDefine"]} {index}\n')
         file.write("\n")
         for index, row in df_timeout.iterrows():
-            file.write(f'#define {row.iloc[0]} {index}\n')
+            file.write(f'#define {row.loc["FlagName"]} {index}\n')
 
         file.write(f'\n#define SIGNAL_NUM {signal_num}\n')
         file.write(f'#define TIMEOUT_NUM {timeout_num}\n')
         file.write(f'#define CONDITION_NUM {condition_num}\n')
+        file.write("\n")
+        file.write("#endif /* CONDITION_H_ */")
 
 
 def write_source_file():
@@ -100,12 +107,13 @@ def write_source_file():
             if row.iloc[0] != signal_name:
                 if signal_name is not None:
                     file.write('};\n\n')
-                signal_name = row.iloc[0]
+                signal_name = row.loc['SignalName']
                 condition_count = len(df_condition_def[df_condition_def.iloc[:, 0] == signal_name])
                 file.write(f'const Condition {signal_name}_Condition[{condition_count}] = {{')
             else:
                 file.write(',')
-            file.write(f'{{{row.iloc[2]},{row.iloc[1]},&{row.iloc[3]},{row.iloc[4]}}}')
+            file.write(
+                f'{{{row.loc["Type"]},{row.loc["Threshold"]},{row.loc["Symbol"]},&{row.loc["EVT"]},{row.loc["Macro"]}}}')
         file.write('};\n\n')
 
         # 写入 SignalCondition 数组
@@ -121,7 +129,7 @@ def write_source_file():
         # 写入 TimeOutAction 数组
         file.write(f'static const Condition TimeOutActionArray[TIMEOUT_NUM] = {{\n')
         for index, row in df_timeout_action.iterrows():
-            file.write(f'{{1, EQ, &{row.iloc[2]}}}')
+            file.write(f'{{1, EQ, &{row.loc["EVT"]}}}')
             if index != len(df_timeout_action) - 1:
                 file.write(',\n')
         file.write('};\n\n\nEVT_FLAG* EVT_flag;\n')
@@ -131,7 +139,7 @@ def main():
     write_header_file()
     write_source_file()
     print("Condition.h and Condition.c have been generated successfully.")
-    print("Press any key to continue...")
+    print("Press Enter to continue...")
     input()
 
 

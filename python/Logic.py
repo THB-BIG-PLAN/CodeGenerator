@@ -59,6 +59,10 @@ def WriteSourceFile(file):
         SignalSyncString += f"    EVT_flag->SignalNum[{row.iloc[1]}] = Get_{row.iloc[2]}_{row.iloc[1]}();\n"
     file.write(SignalSyncString)
     file.write('''	
+    for (int i = 0 ; i< SIGNAL_NUM ; i++)
+	{
+	    EVT_flag->SignalPreNum[i] = EVT_flag->SignalNum[i];
+	}
     for(int i = 0; i < SIGNAL_NUM ; i++)
 	{
 		int length = SignalConditionArray[i].Len;
@@ -88,60 +92,137 @@ void judge(T_u8 Signal,Condition* condition)
 {
 
 	if(condition->Symbol == EQ)
-	{
-		if(condition->Threshold == EVT_flag->SignalNum[Signal])
+	{   if(condition->Type == CONDITION_TYPE_NUMBER)
 		{
-			condition->EVT();
-			EVT_flag->ConditionFlag[condition->ConditionID] = true;
-		}
+            if(EVT_flag->SignalNum[Signal] == condition->Threshold)
+            {
+                condition->EVT();
+                EVT_flag->ConditionFlag[condition->ConditionID] = true;
+            }
+        }
+        else
+        {
+            if(EVT_flag->SignalNum[Signal] == EVT_flag->SignalNum[condition->Threshold])
+            {
+                condition->EVT();
+                EVT_flag->ConditionFlag[condition->ConditionID] = true;
+            }
+        }
+
 	}
 	else if(condition->Symbol == NEQ)
 	{
-		if(condition->Threshold != EVT_flag->SignalNum[Signal])
+		if(condition->Type == CONDITION_TYPE_NUMBER)
 		{
-			condition->EVT();
-			EVT_flag->ConditionFlag[condition->ConditionID] = true;
-		}
+            if(EVT_flag->SignalNum[Signal] != condition->Threshold)
+            {
+                condition->EVT();
+                EVT_flag->ConditionFlag[condition->ConditionID] = true;
+            }
+        }
+        else
+        {
+            if(EVT_flag->SignalNum[Signal] != EVT_flag->SignalNum[condition->Threshold])
+            {
+                condition->EVT();
+                EVT_flag->ConditionFlag[condition->ConditionID] = true;
+            }
+        }
 	}
 	else if(condition->Symbol == GREATER)
 	{
-		if(condition->Threshold > EVT_flag->SignalNum[Signal])
+		if(condition->Type == CONDITION_TYPE_NUMBER)
 		{
-			condition->EVT();
-			EVT_flag->ConditionFlag[condition->ConditionID] = true;
-		}
+            if(EVT_flag->SignalNum[Signal] > condition->Threshold)
+            {
+                condition->EVT();
+                EVT_flag->ConditionFlag[condition->ConditionID] = true;
+            }
+        }
+        else
+        {
+            if(EVT_flag->SignalNum[Signal] > EVT_flag->SignalNum[condition->Threshold])
+            {
+                condition->EVT();
+                EVT_flag->ConditionFlag[condition->ConditionID] = true;
+            }
+        }
 	}
 	else if(condition->Symbol == GREATEROREQ)
 	{
-		if(condition->Threshold >= EVT_flag->SignalNum[Signal])
+		if(condition->Type == CONDITION_TYPE_NUMBER)
 		{
-			condition->EVT();
-			EVT_flag->ConditionFlag[condition->ConditionID] = true;
-		}
+            if(EVT_flag->SignalNum[Signal] >= condition->Threshold)
+            {
+                condition->EVT();
+                EVT_flag->ConditionFlag[condition->ConditionID] = true;
+            }
+        }
+        else
+        {
+            if(EVT_flag->SignalNum[Signal] >= EVT_flag->SignalNum[condition->Threshold])
+            {
+                condition->EVT();
+                EVT_flag->ConditionFlag[condition->ConditionID] = true;
+            }
+        }
 	}
 	else if(condition->Symbol == LESS)
 	{
-		if(condition->Threshold < EVT_flag->SignalNum[Signal])
+		if(condition->Type == CONDITION_TYPE_NUMBER)
 		{
-			condition->EVT();
-			EVT_flag->ConditionFlag[condition->ConditionID] = true;
-		}
+            if(EVT_flag->SignalNum[Signal] < condition->Threshold)
+            {
+                condition->EVT();
+                EVT_flag->ConditionFlag[condition->ConditionID] = true;
+            }
+        }
+        else
+        {
+            if(EVT_flag->SignalNum[Signal] < EVT_flag->SignalNum[condition->Threshold])
+            {
+                condition->EVT();
+                EVT_flag->ConditionFlag[condition->ConditionID] = true;
+            }
+        }
 	}
 	else if(condition->Symbol == LESSOREQ)
 	{
-		if(condition->Threshold <= EVT_flag->SignalNum[Signal])
+		if(condition->Type == CONDITION_TYPE_NUMBER)
 		{
-			condition->EVT();
-			EVT_flag->ConditionFlag[condition->ConditionID] = true;
-		}
+            if(EVT_flag->SignalNum[Signal] <= condition->Threshold)
+            {
+                condition->EVT();
+                EVT_flag->ConditionFlag[condition->ConditionID] = true;
+            }
+        }
+        else
+        {
+            if(EVT_flag->SignalNum[Signal] <= EVT_flag->SignalNum[condition->Threshold])
+            {
+                condition->EVT();
+                EVT_flag->ConditionFlag[condition->ConditionID] = true;
+            }
+        }
 	}
 	else if(condition->Symbol == CHANGETO)
 	{
-		if(condition->Threshold == EVT_flag->SignalNum[Signal] && EVT_flag->SignalNum[Signal] != EVT_flag->SignalPreNum[Signal])
+	    if(condition->Type == CONDITION_TYPE_NUMBER)
 		{
-			condition->EVT();
-			EVT_flag->ConditionFlag[condition->ConditionID] = true;
-		}
+            if(condition->Threshold == EVT_flag->SignalNum[Signal] && EVT_flag->SignalNum[Signal] != EVT_flag->SignalPreNum[Signal])
+            {
+                condition->EVT();
+                EVT_flag->ConditionFlag[condition->ConditionID] = true;
+            }
+        }
+        else
+        {
+            if(EVT_flag->SignalNum[Signal] == EVT_flag->SignalNum[condition->Threshold] && EVT_flag->SignalNum[Signal] != EVT_flag->SignalPreNum[Signal])
+            {
+                condition->EVT();
+                EVT_flag->ConditionFlag[condition->ConditionID] = true;
+            }
+        }
 	}
 	else if(condition->Symbol == CHANGE)
 	{
@@ -162,7 +243,7 @@ def main():
     with open(SOURCE_FILE_PATH, 'w') as f:
         WriteSourceFile(f)
     print('Logic.h and Logic.c have been generated successfully.')
-    print("Press any key to continue...")
+    print("Press Enter to continue...")
     input()
 
 

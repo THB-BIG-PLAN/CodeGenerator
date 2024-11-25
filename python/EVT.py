@@ -103,7 +103,7 @@ def main():
 
     write_event_source()
     print('EVT.h and EVT.c files have been generated successfully.')
-    print('Press any key to continue...')
+    print('Press Enter to continue...')
     input()
 
 if __name__ == '__main__':

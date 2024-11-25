@@ -24,6 +24,8 @@ def main():
     Logic.main()
     Condition.main()
     EVT.main()
+    print("Code Generation Complete,Press Enter to Exit")
+    os.system("pause")
     #
     # # Step 3: Generate Cartesian Product of Event and Condition
     # CartesianProductCal.main()

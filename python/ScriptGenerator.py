@@ -20,6 +20,7 @@ import openpyxl
 import re
 warnings.simplefilter(action='ignore', category=UserWarning)
 from openpyxl import Workbook
+ResultList = []
 ErrorList = []
 Result = pd.DataFrame(columns=['''
 
@@ -81,29 +82,64 @@ class State:
     for i, row in ConditionDataFrame.iterrows():
         ConditionString += f'        if '
         if row.iloc[1] == 'EQ':
-            ConditionString += f"self.current_state['{row.iloc[0]}'] == {row.iloc[2]}:\n"
-            ConditionString += f'            self.{row.iloc[4]} = 1\n'
+            if row.iloc[3] == 'CONDITION_TYPE_NUMBER':
+                ConditionString += f"self.current_state['{row.iloc[0]}'] == {row.iloc[2]}:\n"
+                ConditionString += f'            self.{row.iloc[5]} = 1\n'
+            else:
+                ThresholdSignal = re.sub(r'_SIGNALNUM$', '', row.iloc[2])
+                ConditionString += f"self.current_state['{row.iloc[0]}'] == self.current_state['{ThresholdSignal}']:\n"
+                ConditionString += f"            self.{row.iloc[5]} = 1\n"
         elif row.iloc[1] == 'NEQ':
-            ConditionString += f"self.current_state['{row.iloc[0]}'] != {row.iloc[2]}:\n"
-            ConditionString += f'            self.{row.iloc[4]} = 1\n'
+            if row.iloc[3] == 'CONDITION_TYPE_NUMBER':
+                ConditionString += f"self.current_state['{row.iloc[0]}'] != {row.iloc[2]}:\n"
+                ConditionString += f'            self.{row.iloc[5]} = 1\n'
+            else:
+                ThresholdSignal = re.sub(r'_SIGNALNUM$', '', row.iloc[2])
+                ConditionString += f"self.current_state['{row.iloc[0]}'] != self.current_state['{ThresholdSignal}']:\n"
+                ConditionString += f"            self.{row.iloc[5]} = 1\n"
         elif row.iloc[1] == 'GREATER':
-            ConditionString += f"self.current_state['{row.iloc[0]}'] > {row.iloc[2]}:\n"
-            ConditionString += f'            self.{row.iloc[4]} = 1\n'
+            if row.iloc[3] == 'CONDITION_TYPE_NUMBER':
+                ConditionString += f"self.current_state['{row.iloc[0]}'] > {row.iloc[2]}:\n"
+                ConditionString += f'            self.{row.iloc[5]} = 1\n'
+            else:
+                ThresholdSignal = re.sub(r'_SIGNALNUM$', '', row.iloc[2])
+                ConditionString += f"self.current_state['{row.iloc[0]}'] > self.current_state['{ThresholdSignal}']:\n"
+                ConditionString += f"            self.{row.iloc[5]} = 1\n"
         elif row.iloc[1] == 'GREATEROREQ':
-            ConditionString += f"self.current_state['{row.iloc[0]}'] > {row.iloc[2]}:\n"
-            ConditionString += f'            self.{row.iloc[4]} = 1\n'
+            if row.iloc[3] == 'CONDITION_TYPE_NUMBER':
+                ConditionString += f"self.current_state['{row.iloc[0]}'] >= {row.iloc[2]}:\n"
+                ConditionString += f'            self.{row.iloc[5]} = 1\n'
+            else:
+                ThresholdSignal = re.sub(r'_SIGNALNUM$', '', row.iloc[2])
+                ConditionString += f"self.current_state['{row.iloc[0]}'] >= self.current_state['{ThresholdSignal}']:\n"
+                ConditionString += f"            self.{row.iloc[5]} = 1\n"
         elif row.iloc[1] == 'LESS':
-            ConditionString += f"self.current_state['{row.iloc[0]}'] < {row.iloc[2]}:\n"
-            ConditionString += f'            self.{row.iloc[4]} = 1\n'
+            if row.iloc[3] == 'CONDITION_TYPE_NUMBER':
+                ConditionString += f"self.current_state['{row.iloc[0]}'] < {row.iloc[2]}:\n"
+                ConditionString += f'            self.{row.iloc[5]} = 1\n'
+            else:
+                ThresholdSignal = re.sub(r'_SIGNALNUM$', '', row.iloc[2])
+                ConditionString += f"self.current_state['{row.iloc[0]}'] < self.current_state['{ThresholdSignal}']:\n"
+                ConditionString += f"            self.{row.iloc[5]} = 1\n"
         elif row.iloc[1] == 'LESSOREQ':
-            ConditionString += f"self.current_state['{row.iloc[0]}'] <= {row.iloc[2]}:\n"
-            ConditionString += f'            self.{row.iloc[4]} = 1\n'
+            if row.iloc[3] == 'CONDITION_TYPE_NUMBER':
+                ConditionString += f"self.current_state['{row.iloc[0]}'] <= {row.iloc[2]}:\n"
+                ConditionString += f'            self.{row.iloc[5]} = 1\n'
+            else:
+                ThresholdSignal = re.sub(r'_SIGNALNUM$', '', row.iloc[2])
+                ConditionString += f"self.current_state['{row.iloc[0]}'] <= self.current_state['{ThresholdSignal}']:\n"
+                ConditionString += f"            self.{row.iloc[5]} = 1\n"
         elif row.iloc[1] == 'CHANGE':
             ConditionString += f"self.current_state['{row.iloc[0]}'] != self.previous_state['{row.iloc[0]}']:\n"
-            ConditionString += f'            self.{row.iloc[4]} = 1\n'
+            ConditionString += f'            self.{row.iloc[5]} = 1\n'
         elif row.iloc[1] == 'CHANGETO':
-            ConditionString += f"self.current_state['{row.iloc[0]}'] != self.previous_state['{row.iloc[0]}'] and self.current_state['{row.iloc[0]}'] == {row.iloc[2]}:\n"
-            ConditionString += f'            self.{row.iloc[4]} = 1\n'
+            if row.iloc[3] == 'CONDITION_TYPE_NUMBER':
+                ConditionString += f"self.current_state['{row.iloc[0]}'] != self.previous_state['{row.iloc[0]}'] and self.current_state['{row.iloc[0]}'] == {row.iloc[2]}:\n"
+                ConditionString += f'            self.{row.iloc[5]} = 1\n'
+            else:
+                ThresholdSignal = re.sub(r'_SIGNALNUM$', '', row.iloc[2])
+                ConditionString += f"self.current_state['{row.iloc[0]}] != self.previous_state['{row.iloc[0]}'] and self.current_state['{row.iloc[0]}'] == self.current_state['{ThresholdSignal}']:\n"
+                ConditionString += f"        self.{row.iloc[5]} = 1\n"
     RequirementVerifierFile.write(ConditionString)
     RequirementVerifierFile.write('\n')
 
@@ -114,10 +150,10 @@ class State:
                 pd.notna(row.iloc[2]) and re.search('addTimer', str(row.iloc[2])) is not None):
             row_value = row.iloc[0]
             ConditionList = ConditionDataFrame[
-                ConditionDataFrame.iloc[:, 3].astype(str) == str(row_value)].index.tolist()
+                ConditionDataFrame.iloc[:, 4].astype(str) == str(row_value)].index.tolist()
             AddTimeString += f'        if('
             for j in range(len(ConditionList)):
-                AddTimeString += f"(self.{ConditionDataFrame.iloc[ConditionList[j], 4]} == 1)"
+                AddTimeString += f"(self.{ConditionDataFrame.iloc[ConditionList[j], 5]} == 1)"
                 if j != len(ConditionList) - 1:
                     AddTimeString += ' or '
             AddTimeString += f') '
@@ -155,7 +191,7 @@ class State:
     def update_state(self,{SignalString}):
         self.previous_state = self.current_state.copy()
         self.current_state = {{{StateString}}}
-        
+
 {ConditionMacroString}
 
 {ConditionString}
@@ -191,8 +227,9 @@ class ConflictDetector:
     def __init__(self, rules):
         self.rules = rules
         self.device_state = State({SignalInitString})
-        
-    def detect_and_execute(self,{SignalString}):
+
+    def detect_and_execute(self,data_tuple):
+        ({SignalString}) = data_tuple
         self.device_state.update_state({SignalString})
         applied_actions = self._get_applied_actions()
         ResultDict = self.device_state.current_state.copy()
@@ -209,15 +246,13 @@ class ConflictDetector:
             else:
                 chosen_action = applied_actions[0][0]
                 ResultDict['Result'] = chosen_action
-        self.Write_Result(ResultDict)
-    def Write_Result(self,ResultDict):
-        workbook = openpyxl.load_workbook('Result.xlsx')
-        sheet = workbook['Sheet1']
-        last_row = sheet.max_row
-        for col_num, (cell_key, cell_value) in enumerate(ResultDict.items(), start=1):
-            # 在新行（last_row + 1）的每个单元格写入数据
-            sheet.cell(row=last_row + 1, column=col_num, value=str(cell_value))
-        workbook.save('Result.xlsx')
+        self.Result_Add_To_List(ResultDict)
+
+    def Result_Add_To_List(self, ResultDict):
+        row = []
+        for col_num, (cell_key, cell_value) in enumerate(ResultDict.items()):
+            row.append(cell_value)
+        ResultList.append(row)
     def _get_applied_actions(self):
         """根据条件筛选适用的规则，并按优先级排序"""
         applied_actions = [
@@ -246,7 +281,7 @@ class ConflictDetector:
             for j in range(3, rowlen):
                 if pd.notna(row.iloc[j]) and row.iloc[j] != 'AND':
                     EventFunctionString += (
-                                ('' if j == 3 else ' and\n           ') + f'(device_state.{row.iloc[j]} == 1)')
+                            ('' if j == 3 else ' and\n           ') + f'(device_state.{row.iloc[j]} == 1)')
             EventFunctionString += ')\n'
     RequirementVerifierFile.write(EventFunctionString)
 
@@ -283,33 +318,37 @@ class ConflictDetector:
 rules = [
 {RuleString}
 ]
+def Save_Result():
+    ResultDataFrame = pd.DataFrame(ResultList, columns=['BdcSeedsignal', 'BdcWlcmsignal', 'DLC_u8TurnLightTwice', 'EEP_LOGO_ENABLE_FLAG', 'EspAutoHoldActvSts', 'PLB_u8LBSts', 'PPL_boolPosnLampSts', 'PRM_u8PowerSts', 'VcuGearPosn', 'TIMEFLAGNUM', 'Result'])
+    ResultDataFrame.to_excel('Result.xlsx', sheet_name='Result', index=False)
 def main():
     detector = ConflictDetector(rules)
     ENVIRONMENT_FILE = 'CartesianProduct.xlsx'
     BATCH_SIZE = 10000
     skip_rows = 0
     times = 0
-    file_name = 'Result.xlsx'
-    Result.to_excel(file_name, index=False)
     while True:
         try:
-            EnvironmentDataFrame = pd.read_excel(ENVIRONMENT_FILE, sheet_name=0, nrows=BATCH_SIZE, skiprows=skip_rows)
+            if times != 0:
+                EnvironmentDataFrame = pd.read_excel(ENVIRONMENT_FILE, sheet_name=0, nrows=BATCH_SIZE, skiprows=skip_rows , header=None)
+            else:
+                EnvironmentDataFrame = pd.read_excel(ENVIRONMENT_FILE, sheet_name=0, nrows=BATCH_SIZE, skiprows=skip_rows)
             if EnvironmentDataFrame.empty:
                 break
-            DataList = EnvironmentDataFrame.values.tolist()
-            for List in DataList:
-                detector.detect_and_execute(List[0], List[1],List[2],List[3],List[4],List[5],List[6],List[7],List[8])
+            for index, row in EnvironmentDataFrame.iterrows():
+                detector.detect_and_execute(tuple(row))
             skip_rows += BATCH_SIZE
             times += 1
         except FileNotFoundError:
             print("文件不存在")
             break
+    Save_Result()
     if not ErrorList:
         print("No errors")
     else:
         for ErrorDict in ErrorList:
             print(ErrorDict)
-           
+
 
 if __name__ == '__main__':
     main()

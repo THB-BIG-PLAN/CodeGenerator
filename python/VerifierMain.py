@@ -43,7 +43,7 @@ def main():
 
     imported_module.main()
     print("The requirements check is completed and the results have been output to result.xlsx")
-    print("Press any key to exit")
+    print("Press Enter to exit")
     input()
 
 

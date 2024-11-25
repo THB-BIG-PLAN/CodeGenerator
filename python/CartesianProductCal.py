@@ -41,7 +41,8 @@ def extract_signals(df):
         elif row.iloc[2] == '0xff':  # 阈值为255就取254，255
             Current_SignalSet.update({254, 255})
         else:  # 阈值大于0小于255就取阈值的左右边界
-            Current_SignalSet.update({row.iloc[2] - 1, row.iloc[2], row.iloc[2] + 1})
+            if str(row.iloc[2]).isdigit():
+                Current_SignalSet.update({row.iloc[2] - 1, row.iloc[2], row.iloc[2] + 1})
 
     Signal_list.append(Current_SignalSet)
     return Signal_list
@@ -57,7 +58,8 @@ def save_to_excel(answer_list, signal_name_list, file_name, sheet_name):
     df = pd.DataFrame(answer_list, columns=signal_name_list)
     df.to_excel(file_name, sheet_name=sheet_name, index=False)
     print("Cartesian Product saved to Excel successfully!")
-
+    print("Press Enter to Continue...")
+    input()
 def main():
     df = read_data(CONFIG_PATH, 2)
     signal_name_list = extract_signal_names(df)
