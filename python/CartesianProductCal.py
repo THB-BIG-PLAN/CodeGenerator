@@ -60,12 +60,15 @@ def save_to_excel(answer_list, signal_name_list, file_name, sheet_name):
     print("Cartesian Product saved to Excel successfully!")
     print("Press Enter to Continue...")
     input()
+
+
 def main():
     df = read_data(CONFIG_PATH, 2)
     signal_name_list = extract_signal_names(df)
     signal_list = extract_signals(df)
     answer_list = compute_cartesian_product(signal_list)
     save_to_excel(answer_list, signal_name_list, "CartesianProduct.xlsx", "CartesianProduct")
+
 
 if __name__ == '__main__':
     main()
