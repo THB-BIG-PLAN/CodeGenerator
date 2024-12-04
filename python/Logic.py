@@ -62,7 +62,7 @@ def WriteSourceFile(file):
     SignalSyncString = ''
     for index, row in SignalDataFrame.iterrows():
         if pd.isna(row.iloc[2]) or row.iloc[2] == '':
-            raise Exception.EmptyTypeError(index)
+            raise Exception.EmptyTypeError(index,'SignalSheet')
         SignalSyncString += f"    EVT_flag->SignalNum[{row.iloc[1]}] = Get_{row.iloc[2]}_{row.iloc[1]}();\n"
     file.write(SignalSyncString)
     file.write('''	
@@ -245,7 +245,7 @@ void judge(T_u8 Signal,Condition* condition)
     InitString = ''
     for index, row in InitDataFrame.iterrows():
         if pd.isna(row.loc['Type']) or row.loc['Type'] == '':
-            raise Exception.EmptyTypeError(index)
+            raise Exception.EmptyTypeError(index,'InitSheet')
         if pd.isna(row.loc['Value']) or row.loc['Value'] == '':
             raise Exception.EmptyValueError(index)
         InitString += f"    Set_{row.loc['Type']}_{row.loc['SignalName']}({row.loc['Value']})\n"
