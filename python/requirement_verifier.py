@@ -43,8 +43,8 @@ class State:
         self.PRM_U8POWERSTS_EQ_0 = 0 
         self.VCUGEARPOSN_EQ_0 = 0 
         self.VCUGEARPOSN_EQ_1 = 0 
-        self.TIMEFLAGNUM_EQ_0 = 0 
         self.VCUGEARPOSN_NEQ_DLC_U8TURNLIGHTTWICE_SIGNALNUM = 0 
+        self.TIMEFLAGNUM_EQ_0 = 0 
 
         if self.current_state['BdcSeedsignal'] != 0:
             self.BDCSEEDSIGNAL_NEQ_0 = 1
@@ -140,8 +140,8 @@ class State:
         self.PRM_U8POWERSTS_EQ_0 = 0 
         self.VCUGEARPOSN_EQ_0 = 0 
         self.VCUGEARPOSN_EQ_1 = 0 
-        self.TIMEFLAGNUM_EQ_0 = 0 
         self.VCUGEARPOSN_NEQ_DLC_U8TURNLIGHTTWICE_SIGNALNUM = 0 
+        self.TIMEFLAGNUM_EQ_0 = 0 
 
 
         if self.current_state['BdcSeedsignal'] != 0:

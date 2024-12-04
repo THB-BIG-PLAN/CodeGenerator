@@ -44,6 +44,7 @@ void Condition_Init()
 	Init_Timer();
 	EVT_flag = (EVT_FLAG*)malloc(sizeof(EVT_FLAG));
 	memset(EVT_flag,0,sizeof(EVT_FLAG));
+	SignalInit();
 }
 
 void Condition_Step()

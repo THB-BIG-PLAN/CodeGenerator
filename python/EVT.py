@@ -60,7 +60,7 @@ def write_event_functions(file):
     for i, event in enumerate(df_event_funcs.iloc[:, 0]):
         file.write(f'void {event}() \n{{\n')
 
-        if pd.isna(df_event_funcs.iloc[i, 3]) or re.match('2', event):
+        if pd.isna(df_event_funcs.iloc[i, 3]):
             for j in range(1, 3):
                 if pd.notna(df_event_funcs.iloc[i, j]):
                     file.write(f'    {df_event_funcs.iloc[i, j]};\n')
