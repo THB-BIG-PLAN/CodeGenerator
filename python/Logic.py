@@ -3,6 +3,7 @@
 import pandas as pd
 import re
 import warnings
+import Exception
 
 # ºöÂÔ¾¯¸æ
 warnings.simplefilter(action='ignore', category=UserWarning)
@@ -33,6 +34,9 @@ Source_File_Header = '''
 #include "EVT/Condition/Condition.h"
 #include <stdbool.h>
 
+void SignalInit();
+void judge();
+void TimeOutjudge();
 
 
 void Condition_Init()
@@ -56,6 +60,8 @@ def WriteSourceFile(file):
     SignalDataFrame = pd.read_excel(CONFIG_FILE_PATH, sheet_name=0)
     SignalSyncString = ''
     for index, row in SignalDataFrame.iterrows():
+        if pd.isna(row.iloc[2]) or row.iloc[2] == '':
+            raise Exception.EmptyTypeError(index)
         SignalSyncString += f"    EVT_flag->SignalNum[{row.iloc[1]}] = Get_{row.iloc[2]}_{row.iloc[1]}();\n"
     file.write(SignalSyncString)
     file.write('''	
@@ -96,16 +102,16 @@ void judge(T_u8 Signal,Condition* condition)
 		{
             if(EVT_flag->SignalNum[Signal] == condition->Threshold)
             {
-                condition->EVT();
                 EVT_flag->ConditionFlag[condition->ConditionID] = true;
+                condition->EVT();
             }
         }
         else
         {
             if(EVT_flag->SignalNum[Signal] == EVT_flag->SignalNum[condition->Threshold])
             {
-                condition->EVT();
                 EVT_flag->ConditionFlag[condition->ConditionID] = true;
+                condition->EVT();
             }
         }
 
@@ -116,16 +122,16 @@ void judge(T_u8 Signal,Condition* condition)
 		{
             if(EVT_flag->SignalNum[Signal] != condition->Threshold)
             {
-                condition->EVT();
                 EVT_flag->ConditionFlag[condition->ConditionID] = true;
+                condition->EVT();
             }
         }
         else
         {
             if(EVT_flag->SignalNum[Signal] != EVT_flag->SignalNum[condition->Threshold])
             {
-                condition->EVT();
                 EVT_flag->ConditionFlag[condition->ConditionID] = true;
+                condition->EVT();
             }
         }
 	}
@@ -135,16 +141,16 @@ void judge(T_u8 Signal,Condition* condition)
 		{
             if(EVT_flag->SignalNum[Signal] > condition->Threshold)
             {
-                condition->EVT();
                 EVT_flag->ConditionFlag[condition->ConditionID] = true;
+                condition->EVT();
             }
         }
         else
         {
             if(EVT_flag->SignalNum[Signal] > EVT_flag->SignalNum[condition->Threshold])
             {
-                condition->EVT();
                 EVT_flag->ConditionFlag[condition->ConditionID] = true;
+                condition->EVT();
             }
         }
 	}
@@ -154,16 +160,16 @@ void judge(T_u8 Signal,Condition* condition)
 		{
             if(EVT_flag->SignalNum[Signal] >= condition->Threshold)
             {
-                condition->EVT();
                 EVT_flag->ConditionFlag[condition->ConditionID] = true;
+                condition->EVT();
             }
         }
         else
         {
             if(EVT_flag->SignalNum[Signal] >= EVT_flag->SignalNum[condition->Threshold])
             {
-                condition->EVT();
                 EVT_flag->ConditionFlag[condition->ConditionID] = true;
+                condition->EVT();
             }
         }
 	}
@@ -173,16 +179,16 @@ void judge(T_u8 Signal,Condition* condition)
 		{
             if(EVT_flag->SignalNum[Signal] < condition->Threshold)
             {
-                condition->EVT();
                 EVT_flag->ConditionFlag[condition->ConditionID] = true;
+                condition->EVT();
             }
         }
         else
         {
             if(EVT_flag->SignalNum[Signal] < EVT_flag->SignalNum[condition->Threshold])
             {
-                condition->EVT();
                 EVT_flag->ConditionFlag[condition->ConditionID] = true;
+                condition->EVT();
             }
         }
 	}
@@ -192,16 +198,16 @@ void judge(T_u8 Signal,Condition* condition)
 		{
             if(EVT_flag->SignalNum[Signal] <= condition->Threshold)
             {
-                condition->EVT();
                 EVT_flag->ConditionFlag[condition->ConditionID] = true;
+                condition->EVT();
             }
         }
         else
         {
             if(EVT_flag->SignalNum[Signal] <= EVT_flag->SignalNum[condition->Threshold])
             {
-                condition->EVT();
                 EVT_flag->ConditionFlag[condition->ConditionID] = true;
+                condition->EVT();
             }
         }
 	}
@@ -211,16 +217,16 @@ void judge(T_u8 Signal,Condition* condition)
 		{
             if(condition->Threshold == EVT_flag->SignalNum[Signal] && EVT_flag->SignalNum[Signal] != EVT_flag->SignalPreNum[Signal])
             {
-                condition->EVT();
                 EVT_flag->ConditionFlag[condition->ConditionID] = true;
+                condition->EVT();
             }
         }
         else
         {
             if(EVT_flag->SignalNum[Signal] == EVT_flag->SignalNum[condition->Threshold] && EVT_flag->SignalNum[Signal] != EVT_flag->SignalPreNum[Signal])
             {
-                condition->EVT();
                 EVT_flag->ConditionFlag[condition->ConditionID] = true;
+                condition->EVT();
             }
         }
 	}
@@ -228,13 +234,27 @@ void judge(T_u8 Signal,Condition* condition)
 	{
 		if(EVT_flag->SignalNum[Signal] != EVT_flag->SignalPreNum[Signal])
 		{
-			condition->EVT();
 			EVT_flag->ConditionFlag[condition->ConditionID] = true;
+            condition->EVT();
 		}
 	}
 }
-#pragma GCC pop_options
 ''')
+    InitDataFrame = pd.read_excel('config.xlsx', sheet_name='Init')
+    InitString = ''
+    for index, row in InitDataFrame.iterrows():
+        if pd.isna(row.loc['Type']) or row.loc['Type'] == '':
+            raise Exception.EmptyTypeError(index)
+        if pd.isna(row.loc['Value']) or row.loc['Value'] == '':
+            raise Exception.EmptyValueError(index)
+        InitString += f"    Set_{row.loc['Type']}_{row.loc['SignalName']}({row.loc['Value']})\n"
+    file.write(f'''
+void SignalInit()
+{{
+{InitString}
+}}
+#pragma GCC pop_options
+    ''')
 
 
 def main():
