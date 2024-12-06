@@ -58,7 +58,7 @@ def WriteConditionToExcel():
                     'Threshold': Signal_Name + '_Pre_SIGNALNUM',
                     'ThresholdType': 'CONDITION_TYPE_SIGNAL',
                     'EVT': row.loc['EVT'],
-                    'Macro': Signal_Name.upper() + '_CHANGE_' + Signal_Name + '_PRE_SIGNALNUM'
+                    'Macro': Signal_Name.upper() + '_CHANGE_' + Signal_Name.upper() + '_PRE_SIGNALNUM'
                 }
                 NewRowList.append(NewRow)
             elif a != 'x' and b == 'x':
@@ -155,7 +155,7 @@ def WriteEVTToExcel():
     NewRowList = []
     NewRow = {}
     NewEVT_DataFrame = pd.DataFrame(
-        columns=['EVTName', 'Action1', 'Action2', 'Description', 'Condition1',
+        columns=['EVTName', 'Action1', 'Action2','Condition0', 'Condition1',
                  'Condition2', 'Condition3', 'Condition4', 'Condition5', 'Condition6', 'Condition7', 'Condition8'])
     for i, row in EVT_DataFrame.iterrows():
         NewRow = {}
@@ -165,17 +165,48 @@ def WriteEVTToExcel():
                 NewRow[row.index[j]] = col
                 continue
             if pd.notna(col) and col != 'AND':
-                ConditionNum += 1
                 col = str(col)
                 pattern = r'^.*CHANGE.*\(([^)]+),([^)]+)\).*$'
                 match = re.match(pattern, col)
                 if match:
-                    print("'CHANGE'")
-                    print("a", match.group(1))
-                    print("b", match.group(2))
+                    a = match.group(1)
+                    b = match.group(2)
+                    matching_rows = Condition_DataFrame[Condition_DataFrame['Macro'] == col]
+                    # print(matching_rows['SignalName'])
+                    SignalString = str(matching_rows['SignalName'].iloc[0]).upper()
+                    if a == 'X' and b == 'X':
+                        NewRow['Condition'+str(ConditionNum)] = SignalString + '_CHANGE_' + SignalString + '_PRE_SIGNALNUM'
+                        ConditionNum += 1
+                        pass
+                    elif a != 'X' and b == 'X':
+                        NewRow['Condition'+str(ConditionNum)] = SignalString + '_CHANGE_' + SignalString + '_PRE_SIGNALNUM'
+                        ConditionNum += 1
+                        NewRow['Condition'+str(ConditionNum)] = SignalString + '_PRE_EQ_' + a
+                        ConditionNum += 1
+                        pass
+                    elif a == 'X' and b != 'X':
+                        NewRow['Condition'+str(ConditionNum)] = SignalString + '_CHANGE_' + SignalString + '_PRE_SIGNALNUM'
+                        ConditionNum += 1
+                        NewRow['Condition'+str(ConditionNum)] = SignalString + '_EQ_' + b
+                        ConditionNum += 1
+                        pass
+                    elif a != 'X' and b != 'X':
+                        NewRow['Condition'+str(ConditionNum)] = SignalString + '_EQ_' + b
+                        ConditionNum += 1
+                        NewRow['Condition'+str(ConditionNum)] = SignalString + '_PRE_EQ_' + a
+                        ConditionNum += 1
+                        pass
                 else:
-                    NewRow[row.index[j]] = col
-        print(NewRow)
+                    NewRow['Condition'+str(ConditionNum)] = col
+                    ConditionNum += 1
+        NewRowList.append(NewRow)
+    NewEVT_DataFrame = pd.concat([NewEVT_DataFrame, pd.DataFrame(NewRowList)], ignore_index=True)
+    # write to excel
+    if not os.path.exists(CONFIG_PATH):
+        NewEVT_DataFrame.to_excel(CONFIG_PATH, sheet_name='EVT', index=False)
+    else:
+        with pd.ExcelWriter(CONFIG_PATH, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+            NewEVT_DataFrame.to_excel(writer, sheet_name='EVT', index=False)
 
 
 # def WriteTimeFlagToExcel():
@@ -192,8 +223,8 @@ def WriteEVTToExcel():
 #
 # def WriteListToExcel():
 def main():
-    # WriteInputSignalToExcel()
-    # WriteConditionToExcel()
+    WriteInputSignalToExcel()
+    WriteConditionToExcel()
     WriteEVTToExcel()
     # WriteTimeFlagToExcel()
     # WriteConstMacroToExcel()
