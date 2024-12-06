@@ -5,7 +5,7 @@ import itertools
 # 忽略警告
 warnings.simplefilter(action='ignore', category=UserWarning)
 
-CONFIG_PATH = 'config.xlsx'
+CONFIG_PATH = 'ConfigByHand.xlsx'
 
 
 def read_data(config_path, sheet_index):

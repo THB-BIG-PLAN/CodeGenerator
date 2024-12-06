@@ -6,7 +6,7 @@ import re
 
 def main():
     warnings.simplefilter(action='ignore', category=UserWarning)
-    CONFIG_FILE = "config.xlsx"
+    CONFIG_FILE = "ConfigByHand.xlsx"
     WRITE_FILE = "requirement_verifier.py"
     ActionDataFrame = pd.read_excel(CONFIG_FILE, sheet_name="Action")
     SignalDataFrame = pd.read_excel(CONFIG_FILE, sheet_name=0)

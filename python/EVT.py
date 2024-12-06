@@ -6,7 +6,7 @@ import warnings
 warnings.simplefilter(action='ignore', category=UserWarning)
 
 # 常量定义
-CONFIG_PATH = 'config.xlsx'
+CONFIG_PATH = 'ConfigByHand.xlsx'
 EVT_HEADER_PATH = 'EVT/EVT.h'
 EVT_SOURCE_PATH = 'EVT/EVT.c'
 

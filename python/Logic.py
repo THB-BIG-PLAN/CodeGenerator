@@ -10,7 +10,7 @@ warnings.simplefilter(action='ignore', category=UserWarning)
 
 HEADER_FILE_PATH = 'Logic/Logic.h'
 SOURCE_FILE_PATH = 'Logic/Logic.c'
-CONFIG_FILE_PATH = 'config.xlsx'
+CONFIG_FILE_PATH = 'ConfigByHand.xlsx'
 HEADER_FILE_HEADER = '''
 #ifndef EVT_EVENT_LOGIC_H_
 #define EVT_EVENT_LOGIC_H_
@@ -241,7 +241,7 @@ void judge(T_u8 Signal,Condition* condition)
 	}
 }
 ''')
-    InitDataFrame = pd.read_excel('config.xlsx', sheet_name='Init')
+    InitDataFrame = pd.read_excel('ConfigByHand.xlsx', sheet_name='Init')
     InitString = ''
     for index, row in InitDataFrame.iterrows():
         if pd.isna(row.loc['Type']) or row.loc['Type'] == '':
