@@ -1,6 +1,6 @@
 import os
 import warnings
-
+from openpyxl.styles import Font, Alignment
 import pandas as pd
 import openpyxl
 import re
@@ -18,6 +18,7 @@ OutputInitializer_DataFrame = pd.read_excel(HAND_CONFIG_PATH, sheet_name="Output
 Action_DataFrame = pd.read_excel(HAND_CONFIG_PATH, sheet_name="Action")
 pd.set_option('display.max_columns', None)
 pd.set_option('display.max_rows', None)
+order = ['InputSignal', 'OutputInitializer', 'Condition', 'EVT', 'TimeFlag', 'ConstMacro', 'Action', 'List']
 
 
 def WriteInputSignalToExcel():
@@ -68,7 +69,7 @@ def WriteConditionToExcel():
                     'Threshold': Signal_Name + '_Pre_SIGNALNUM',
                     'ThresholdType': 'CONDITION_TYPE_SIGNAL',
                     'EVT': row.loc['EVT'],
-                    'Macro': Signal_Name.upper() + '_CHANGE_' + Signal_Name + '_PRE_SIGNALNUM'
+                    'Macro': Signal_Name.upper() + '_CHANGE_' + Signal_Name.upper() + '_PRE_SIGNALNUM'
                 }
                 NewRowList.append(NewRow)
                 NewRow = {
@@ -155,7 +156,7 @@ def WriteEVTToExcel():
     NewRowList = []
     NewRow = {}
     NewEVT_DataFrame = pd.DataFrame(
-        columns=['EVTName', 'Action1', 'Action2','Condition0', 'Condition1',
+        columns=['EVTName', 'Action1', 'Action2', 'Condition0', 'Condition1',
                  'Condition2', 'Condition3', 'Condition4', 'Condition5', 'Condition6', 'Condition7', 'Condition8'])
     for i, row in EVT_DataFrame.iterrows():
         NewRow = {}
@@ -175,29 +176,32 @@ def WriteEVTToExcel():
                     # print(matching_rows['SignalName'])
                     SignalString = str(matching_rows['SignalName'].iloc[0]).upper()
                     if a == 'X' and b == 'X':
-                        NewRow['Condition'+str(ConditionNum)] = SignalString + '_CHANGE_' + SignalString + '_PRE_SIGNALNUM'
+                        NewRow['Condition' + str(
+                            ConditionNum)] = SignalString + '_CHANGE_' + SignalString + '_PRE_SIGNALNUM'
                         ConditionNum += 1
                         pass
                     elif a != 'X' and b == 'X':
-                        NewRow['Condition'+str(ConditionNum)] = SignalString + '_CHANGE_' + SignalString + '_PRE_SIGNALNUM'
+                        NewRow['Condition' + str(
+                            ConditionNum)] = SignalString + '_CHANGE_' + SignalString + '_PRE_SIGNALNUM'
                         ConditionNum += 1
-                        NewRow['Condition'+str(ConditionNum)] = SignalString + '_PRE_EQ_' + a
+                        NewRow['Condition' + str(ConditionNum)] = SignalString + '_PRE_EQ_' + a
                         ConditionNum += 1
                         pass
                     elif a == 'X' and b != 'X':
-                        NewRow['Condition'+str(ConditionNum)] = SignalString + '_CHANGE_' + SignalString + '_PRE_SIGNALNUM'
+                        NewRow['Condition' + str(
+                            ConditionNum)] = SignalString + '_CHANGE_' + SignalString + '_PRE_SIGNALNUM'
                         ConditionNum += 1
-                        NewRow['Condition'+str(ConditionNum)] = SignalString + '_EQ_' + b
+                        NewRow['Condition' + str(ConditionNum)] = SignalString + '_EQ_' + b
                         ConditionNum += 1
                         pass
                     elif a != 'X' and b != 'X':
-                        NewRow['Condition'+str(ConditionNum)] = SignalString + '_EQ_' + b
+                        NewRow['Condition' + str(ConditionNum)] = SignalString + '_EQ_' + b
                         ConditionNum += 1
-                        NewRow['Condition'+str(ConditionNum)] = SignalString + '_PRE_EQ_' + a
+                        NewRow['Condition' + str(ConditionNum)] = SignalString + '_PRE_EQ_' + a
                         ConditionNum += 1
                         pass
                 else:
-                    NewRow['Condition'+str(ConditionNum)] = col
+                    NewRow['Condition' + str(ConditionNum)] = col
                     ConditionNum += 1
         NewRowList.append(NewRow)
     NewEVT_DataFrame = pd.concat([NewEVT_DataFrame, pd.DataFrame(NewRowList)], ignore_index=True)
@@ -209,28 +213,100 @@ def WriteEVTToExcel():
             NewEVT_DataFrame.to_excel(writer, sheet_name='EVT', index=False)
 
 
-# def WriteTimeFlagToExcel():
-#
-#
-# def WriteConstMacroToExcel():
-#
-#
-# def WriteOutputInitializerToExcel():
-#
-#
-# def WriteActionToExcel():
-#
-#
-# def WriteListToExcel():
+def WriteTimeFlagToExcel():
+    if not os.path.exists(CONFIG_PATH):
+        TimeFlag_DataFrame.to_excel(CONFIG_PATH, sheet_name='TimeFlag', index=False)
+    else:
+        with pd.ExcelWriter(CONFIG_PATH, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+            TimeFlag_DataFrame.to_excel(writer, sheet_name='TimeFlag', index=False)
+
+
+def WriteConstMacroToExcel():
+    if not os.path.exists(CONFIG_PATH):
+        ConstMacro_DataFrame.to_excel(CONFIG_PATH, sheet_name='ConstMacro', index=False)
+    else:
+        with pd.ExcelWriter(CONFIG_PATH, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+            ConstMacro_DataFrame.to_excel(writer, sheet_name='ConstMacro', index=False)
+
+
+def WriteOutputInitializerToExcel():
+    if not os.path.exists(CONFIG_PATH):
+        OutputInitializer_DataFrame.to_excel(CONFIG_PATH, sheet_name='OutputInitializer', index=False)
+    else:
+        with pd.ExcelWriter(CONFIG_PATH, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+            OutputInitializer_DataFrame.to_excel(writer, sheet_name='OutputInitializer', index=False)
+
+
+def WriteActionToExcel():
+    if not os.path.exists(CONFIG_PATH):
+        Action_DataFrame.to_excel(CONFIG_PATH, sheet_name='Action', index=False)
+    else:
+        with pd.ExcelWriter(CONFIG_PATH, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+            Action_DataFrame.to_excel(writer, sheet_name='Action', index=False)
+
+
+def WriteListToExcel():
+    if not os.path.exists(CONFIG_PATH):
+        List_DataFrame.to_excel(CONFIG_PATH, sheet_name='List', index=False)
+    else:
+        with pd.ExcelWriter(CONFIG_PATH, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
+            List_DataFrame.to_excel(writer, sheet_name='List', index=False)
+
+
+def reorder_sheets(input_file, output_file, desired_order):
+    # Open the existing Excel file
+    workbook = openpyxl.load_workbook(input_file)
+    sheets = workbook.sheetnames
+    print("Original sheet order:", sheets)
+
+    # Create a new workbook
+    new_workbook = openpyxl.Workbook()
+    new_workbook.remove(new_workbook.active)  # Remove the default sheet
+
+    # Define the font for all cells
+    font = Font(name='Fira Code')
+    alignment = Alignment(horizontal='left')
+
+    # Add sheets in the desired order
+    for sheet_name in desired_order:
+        if sheet_name in sheets:
+            sheet = workbook[sheet_name]
+            new_sheet = new_workbook.create_sheet(sheet_name)
+            for row in sheet.iter_rows():
+                for cell in row:
+                    new_cell = new_sheet[cell.coordinate]
+                    new_cell.value = cell.value
+                    new_cell.font = font
+                    new_cell.alignment = alignment
+
+    # Automatically adjust column widths
+    for sheet_name in desired_order:
+        new_sheet = new_workbook[sheet_name]
+        for column in new_sheet.columns:
+            max_length = 0
+            column_letter = column[0].column_letter
+            for cell in column:
+                cell_length = len(str(cell.value)) if cell.value is not None else 0
+                if cell_length > max_length:
+                    max_length = cell_length
+            adjusted_width = (max_length + 5) * 1.2
+            new_sheet.column_dimensions[column_letter].width = adjusted_width
+
+    # Save the modified Excel file
+    new_workbook.save(output_file)
+    print("Modified sheet order:", desired_order)
+
+
 def main():
     WriteInputSignalToExcel()
     WriteConditionToExcel()
     WriteEVTToExcel()
-    # WriteTimeFlagToExcel()
-    # WriteConstMacroToExcel()
-    # WriteOutputInitializerToExcel()
-    # WriteActionToExcel()
-    # WriteListToExcel()
+    WriteTimeFlagToExcel()
+    WriteConstMacroToExcel()
+    WriteOutputInitializerToExcel()
+    WriteActionToExcel()
+    WriteListToExcel()
+    reorder_sheets(CONFIG_PATH, CONFIG_PATH, order)
 
 
 if __name__ == "__main__":
