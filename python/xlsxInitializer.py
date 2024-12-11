@@ -59,7 +59,7 @@ def WriteConditionToExcel():
                     'Threshold': Signal_Name + '_Pre_SIGNALNUM',
                     'ThresholdType': 'CONDITION_TYPE_SIGNAL',
                     'EVT': row.loc['EVT'],
-                    'Macro': Signal_Name.upper() + '_CHANGE_' + Signal_Name.upper() + '_PRE_SIGNALNUM'
+                    'Macro': Signal_Name.upper() + '_CHANGE_' + Signal_Name.upper() + '_PRE'
                 }
                 NewRowList.append(NewRow)
             elif a != 'x' and b == 'x':
@@ -69,7 +69,7 @@ def WriteConditionToExcel():
                     'Threshold': Signal_Name + '_Pre_SIGNALNUM',
                     'ThresholdType': 'CONDITION_TYPE_SIGNAL',
                     'EVT': row.loc['EVT'],
-                    'Macro': Signal_Name.upper() + '_CHANGE_' + Signal_Name.upper() + '_PRE_SIGNALNUM'
+                    'Macro': Signal_Name.upper() + '_CHANGE_' + Signal_Name.upper() + '_PRE'
                 }
                 NewRowList.append(NewRow)
                 NewRow = {
@@ -88,7 +88,7 @@ def WriteConditionToExcel():
                     'Threshold': Signal_Name + '_Pre_SIGNALNUM',
                     'ThresholdType': 'CONDITION_TYPE_SIGNAL',
                     'EVT': row.loc['EVT'],
-                    'Macro': Signal_Name.upper() + '_CHANGE_' + Signal_Name + '_PRE_SIGNALNUM'
+                    'Macro': Signal_Name.upper() + '_CHANGE_' + Signal_Name + '_PRE'
                 }
                 NewRowList.append(NewRow)
                 NewRow = {
@@ -101,7 +101,6 @@ def WriteConditionToExcel():
                 }
                 NewRowList.append(NewRow)
             elif a != 'x' and b != 'x':
-
                 NewRow = {
                     'SignalName': Signal_Name + '_Pre',
                     'Symbol': 'EQ',
@@ -121,24 +120,19 @@ def WriteConditionToExcel():
                 }
                 NewRowList.append(NewRow)
         else:
-            if row.loc['ThresholdType'] == 'CONDITION_TYPE_SIGNAL':
-                NewRow = {
-                    'SignalName': Signal_Name,
-                    'Symbol': row.loc['Symbol'],
-                    'Threshold': row.loc['Threshold'] + '_SIGNALNUM',
-                    'ThresholdType': row.loc['ThresholdType'],
-                    'EVT': row.loc['EVT'],
-                    'Macro': row.loc['Macro']
-                }
+            Threshold = row.loc['Threshold']
+            NewRow = {
+                'SignalName': row.loc['SignalName'],
+                'Symbol': row.loc['Symbol'],
+                'EVT': row.loc['EVT'],
+                'Macro': row.loc['Macro']
+            }
+            if InputSignal_DataFrame['SignalName'].isin([Threshold]).any():
+                NewRow['ThresholdType'] = 'CONDITION_TYPE_SIGNAL'
+                NewRow['Threshold'] = Threshold + '_SIGNALNUM'
             else:
-                NewRow = {
-                    'SignalName': Signal_Name,
-                    'Symbol': row.loc['Symbol'],
-                    'Threshold': row.loc['Threshold'],
-                    'ThresholdType': row.loc['ThresholdType'],
-                    'EVT': row.loc['EVT'],
-                    'Macro': row.loc['Macro']
-                }
+                NewRow['ThresholdType'] = 'CONDITION_TYPE_NUMBER'
+                NewRow['Threshold'] = Threshold
             NewRowList.append(NewRow)
     NewCondition_DataFrame = pd.concat([NewCondition_DataFrame, pd.DataFrame(NewRowList)], ignore_index=True)
     # order by SignalName
@@ -246,11 +240,16 @@ def WriteActionToExcel():
 
 
 def WriteListToExcel():
+    NewCondition_DataFrame = pd.read_excel(CONFIG_PATH, sheet_name="Condition")
+    condition_macro_unique = NewCondition_DataFrame['Macro'].drop_duplicates().reset_index(drop=True)
+    NewList_DataFrame = List_DataFrame.copy()
+    NewList_DataFrame['ConditionMacro'] = condition_macro_unique
+    # print(NewList_DataFrame)
     if not os.path.exists(CONFIG_PATH):
-        List_DataFrame.to_excel(CONFIG_PATH, sheet_name='List', index=False)
+        NewList_DataFrame.to_excel(CONFIG_PATH, sheet_name='List', index=False)
     else:
         with pd.ExcelWriter(CONFIG_PATH, engine='openpyxl', mode='a', if_sheet_exists='replace') as writer:
-            List_DataFrame.to_excel(writer, sheet_name='List', index=False)
+            NewList_DataFrame.to_excel(writer, sheet_name='List', index=False)
 
 
 def reorder_sheets(input_file, output_file, desired_order):

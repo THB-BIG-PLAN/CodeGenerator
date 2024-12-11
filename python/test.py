@@ -1,9 +1,7 @@
 import re
+import pandas as pd
 
-text = "qweqwewq_CHANGE_123123(xxxx,aaaa)"
-pattern = r'^.*CHANGE.*\(([^)]+),([^)]+)\).*$'
-match = re.match(pattern, text)
-if match:
-    print("'CHANGE'")
-    print("a", match.group(1))
-    print("b", match.group(2))
+SignalDataFrame = pd.read_excel('Config.xlsx', sheet_name='InputSignal')
+ConditionDataFrame = pd.read_excel('Config.xlsx', sheet_name='Condition')
+not_in_condition = SignalDataFrame[~SignalDataFrame['SignalName'].isin(ConditionDataFrame['SignalName'])]
+print(not_in_condition)
