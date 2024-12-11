@@ -31,7 +31,7 @@
 #define CONDITION_TYPE_SIGNAL 1
 
 #define BDCSEEDSIGNAL_NEQ_0 0
-#define BDCSEEDSIGNAL_CHANGE_BdcSeedsignal_PRE 1
+#define BDCSEEDSIGNAL_CHANGE_BDCSEEDSIGNAL_PRE 1
 #define BDCSEEDSIGNAL_EQ_0 2
 #define BDCWLCMSIGNAL_NEQ_0 3
 #define BDCWLCMSIGNAL_EQ_0 4
@@ -52,6 +52,9 @@
 #define VCUGEARPOSN_EQ_0 19
 #define VCUGEARPOSN_EQ_1 20
 #define VCUGEARPOSN_NEQ_DLC_U8TURNLIGHTTWICE 21
+#define VCUGEARPOSN_EQ_3 22
+#define VCUGEARPOSN_PRE_EQ_2 23
+#define TIMEFLAGNUM_EQ_0 24
 
 #define EQ 0
 #define NEQ 1
@@ -69,7 +72,7 @@
 
 #define SIGNAL_NUMBER 18
 #define TIME_FLAG_NUMBER 4
-#define CONDITION_NUMBER 22
+#define CONDITION_NUMBER 25
 
 typedef struct Condition {
     Bit Type;
@@ -92,7 +95,7 @@ enum SignalType {
     Type_uint32,
     Type_uint64,
     Type_uint8,
-}
+};
 
 typedef struct SignalCondition {
     uint8 Signal;
@@ -106,11 +109,11 @@ typedef struct EVT_FLAG {
     EEPROM_U8 Signal_EEPROM_U8[2];
     uint8 Signal_uint8[14];
     uint8 TimeOutFlagNum;
-    Bit TimeOutFlag[TIMEOUT_NUM];
+    Bit TimeOutFlag[TIME_FLAG_NUMBER];
     Bit ConditionFlag[CONDITION_NUMBER];
 } EVT_FLAG;
 
 extern EVT_FLAG* EVT_flag;
-static const SignalCondition SignalConditionArray[SIGNAL_NUM];
-static const Condition TimeOutActionArray[TIMEOUT_NUM];
+static const SignalCondition SignalConditionArray[SIGNAL_NUMBER];
+static const Condition TimeOutActionArray[TIME_FLAG_NUMBER];
 #endif // CONDITION_H_

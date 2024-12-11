@@ -114,7 +114,7 @@ enum SignalType {
     Type_uint32,
     Type_uint64,
     Type_uint8,
-}
+};
 
 typedef struct SignalCondition {
     uint8 Signal;
@@ -128,12 +128,12 @@ typedef struct SignalCondition {
     Condition_Header_Header_String += (f"typedef struct EVT_FLAG {{\n"
                                        f"{EVT_FLAG_String}"
                                        f"    uint8 TimeOutFlagNum;\n"
-                                       f"    Bit TimeOutFlag[TIMEOUT_NUM];\n"
+                                       f"    Bit TimeOutFlag[TIME_FLAG_NUMBER];\n"
                                        f"    Bit ConditionFlag[CONDITION_NUMBER];\n"
                                        f"}} EVT_FLAG;\n\n"
                                        f"extern EVT_FLAG* EVT_flag;\n"
-                                       f"static const SignalCondition SignalConditionArray[SIGNAL_NUM];\n"
-                                       f"static const Condition TimeOutActionArray[TIMEOUT_NUM];\n"
+                                       f"static const SignalCondition SignalConditionArray[SIGNAL_NUMBER];\n"
+                                       f"static const Condition TimeOutActionArray[TIME_FLAG_NUMBER];\n"
                                        f"#endif // CONDITION_H_\n")
 
     # print(Condition_Header_Header_String)
@@ -169,7 +169,7 @@ def write_condition_source():
     # print(Condition_Signal_String)
 
     # SignalConditionArray
-    Condition_Array_String = 'static const SignalCondition SignalConditionArray[SIGNAL_NUM] = {\n'
+    Condition_Array_String = 'static const SignalCondition SignalConditionArray[SIGNAL_NUMBER] = {\n'
     Signal_Name = None
     Signal_Condition_Number = 0
     for i, row in ConditionDataFrame.iterrows():
@@ -186,10 +186,10 @@ def write_condition_source():
             Condition_Array_String += f"{{{Signal_Name}_SIGNALNUM, Type_{Signal_Type}, {Signal_Condition_Number} , &{Signal_Name}_Condition}}}};\n"
 
     # TIMEOUT_ACTION_ARRAY
-    Time_Out_Action_String = 'const Condition TimeOutActionArray[TIMEOUT_NUM] = {\n'
+    Time_Out_Action_String = 'const Condition TimeOutActionArray[TIME_FLAG_NUMBER] = {\n'
     for i, row in TimeFlagDataFrame.iterrows():
         if pd.notna(row.loc['FlagName']):
-            Time_Out_Action_String += f"{{1,EQ,{row.loc['FlagName']},0}}\n"
+            Time_Out_Action_String += f"{{1,EQ,{row.loc['FlagName']},0}},\n"
     Time_Out_Action_String += '};\n'
     # print(Time_Out_Action_String)
 

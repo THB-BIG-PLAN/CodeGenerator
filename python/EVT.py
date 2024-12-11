@@ -49,7 +49,7 @@ def get_functions_declare_String():
     pass
 
 
-def get_action_String(row):
+def get_action_List(row):
     Action_String_List = []
     for i in range(1, 3):
         if pd.notna(row.iloc[i]):
@@ -63,9 +63,9 @@ def get_condition_String(row):
         if pd.isnull(row.iloc[i]):
             break
         if i == 3:
-            Condition_String += f"EVT_Flag->ConditionFlag[{row.iloc[i]}]"
+            Condition_String += f"EVT_flag->ConditionFlag[{row.iloc[i]}]"
         else:
-            Condition_String += f" && \n        EVT_Flag->ConditionFlag[{row.iloc[i]}]"
+            Condition_String += f" && \n        EVT_flag->ConditionFlag[{row.iloc[i]}]"
     Condition_String += ')\n'
     # print(Condition_String)
     return Condition_String
@@ -76,15 +76,15 @@ def get_functions_define_String():
     for index, row in Events_DataFrame.iterrows():
         Event_function_define_String += f"void {row.loc['EVTName']}()\n{{\n"
         if pd.isnull(row.loc['Condition0']):
-            Action_String_List = get_action_String(row)
+            Action_String_List = get_action_List(row)
             for Action_String in Action_String_List:
-                Event_function_define_String += f"    {Action_String}\n"
+                Event_function_define_String += f"    {Action_String};\n"
         else:
             Condition_String = get_condition_String(row)
             Event_function_define_String += f"{Condition_String}    {{\n"
-            Action_String_List = get_action_String(row)
+            Action_String_List = get_action_List(row)
             for Action_String in Action_String_List:
-                Event_function_define_String += f"        {Action_String}\n"
+                Event_function_define_String += f"        {Action_String};\n"
             Event_function_define_String += "    }\n"
         Event_function_define_String += '}\n\n'
     return Event_function_define_String

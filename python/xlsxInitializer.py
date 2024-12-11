@@ -88,7 +88,7 @@ def WriteConditionToExcel():
                     'Threshold': Signal_Name + '_Pre_SIGNALNUM',
                     'ThresholdType': 'CONDITION_TYPE_SIGNAL',
                     'EVT': row.loc['EVT'],
-                    'Macro': Signal_Name.upper() + '_CHANGE_' + Signal_Name + '_PRE'
+                    'Macro': Signal_Name.upper() + '_CHANGE_' + Signal_Name.upper() + '_PRE'
                 }
                 NewRowList.append(NewRow)
                 NewRow = {
@@ -171,19 +171,19 @@ def WriteEVTToExcel():
                     SignalString = str(matching_rows['SignalName'].iloc[0]).upper()
                     if a == 'X' and b == 'X':
                         NewRow['Condition' + str(
-                            ConditionNum)] = SignalString + '_CHANGE_' + SignalString + '_PRE_SIGNALNUM'
+                            ConditionNum)] = SignalString + '_CHANGE_' + SignalString + '_PRE'
                         ConditionNum += 1
                         pass
                     elif a != 'X' and b == 'X':
                         NewRow['Condition' + str(
-                            ConditionNum)] = SignalString + '_CHANGE_' + SignalString + '_PRE_SIGNALNUM'
+                            ConditionNum)] = SignalString + '_CHANGE_' + SignalString + '_PRE'
                         ConditionNum += 1
                         NewRow['Condition' + str(ConditionNum)] = SignalString + '_PRE_EQ_' + a
                         ConditionNum += 1
                         pass
                     elif a == 'X' and b != 'X':
                         NewRow['Condition' + str(
-                            ConditionNum)] = SignalString + '_CHANGE_' + SignalString + '_PRE_SIGNALNUM'
+                            ConditionNum)] = SignalString + '_CHANGE_' + SignalString + '_PRE'
                         ConditionNum += 1
                         NewRow['Condition' + str(ConditionNum)] = SignalString + '_EQ_' + b
                         ConditionNum += 1
@@ -242,9 +242,14 @@ def WriteActionToExcel():
 def WriteListToExcel():
     NewCondition_DataFrame = pd.read_excel(CONFIG_PATH, sheet_name="Condition")
     condition_macro_unique = NewCondition_DataFrame['Macro'].drop_duplicates().reset_index(drop=True)
+    new_row = pd.Series(['TIMEFLAGNUM_EQ_0'])
+    condition_macro_unique = pd.concat([condition_macro_unique, new_row], ignore_index=True)
     NewList_DataFrame = List_DataFrame.copy()
+    if len(condition_macro_unique) > len(NewList_DataFrame):
+        extra_rows = len(condition_macro_unique) - len(NewList_DataFrame)
+        new_rows = pd.DataFrame(index=range(extra_rows), columns=NewList_DataFrame.columns)
+        NewList_DataFrame = pd.concat([NewList_DataFrame, new_rows], ignore_index=True)
     NewList_DataFrame['ConditionMacro'] = condition_macro_unique
-    # print(NewList_DataFrame)
     if not os.path.exists(CONFIG_PATH):
         NewList_DataFrame.to_excel(CONFIG_PATH, sheet_name='List', index=False)
     else:

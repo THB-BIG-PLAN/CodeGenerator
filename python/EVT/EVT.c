@@ -48,155 +48,155 @@ void LGL_Normal_OFF2();
 
 void LGL_SEE_ON()
 {
-    if (EVT_Flag->ConditionFlag[BDCSEEDSIGNAL_NEQ_0])
+    if (EVT_flag->ConditionFlag[BDCSEEDSIGNAL_NEQ_0])
     {
-        LGL_Set(ON)
+        LGL_Set(ON);
     }
 }
 
 void LGL_WEL_ON()
 {
-    if (EVT_Flag->ConditionFlag[BDCWLCMSIGNAL_NEQ_0])
+    if (EVT_flag->ConditionFlag[BDCWLCMSIGNAL_NEQ_0])
     {
-        LGL_Set(ON)
+        LGL_Set(ON);
     }
 }
 
 void LGL_VCU_POL_ON()
 {
-    if (EVT_Flag->ConditionFlag[VCUGEARPOSN_EQ_1] && 
-        EVT_Flag->ConditionFlag[PPL_BOOLPOSNLAMPSTS_EQ_1])
+    if (EVT_flag->ConditionFlag[VCUGEARPOSN_EQ_1] && 
+        EVT_flag->ConditionFlag[PPL_BOOLPOSNLAMPSTS_EQ_1])
     {
-        LGL_Set(ON)
+        LGL_Set(ON);
     }
 }
 
 void LGL_VCU_LBL_ON()
 {
-    if (EVT_Flag->ConditionFlag[VCUGEARPOSN_EQ_1] && 
-        EVT_Flag->ConditionFlag[PLB_U8LBSTS_EQ_1])
+    if (EVT_flag->ConditionFlag[VCUGEARPOSN_EQ_1] && 
+        EVT_flag->ConditionFlag[PLB_U8LBSTS_EQ_1])
     {
-        LGL_Set(ON)
+        LGL_Set(ON);
     }
 }
 
 void LGL_ESP_POL_ON()
 {
-    if (EVT_Flag->ConditionFlag[ESPAUTOHOLDACTVSTS_EQ_1] && 
-        EVT_Flag->ConditionFlag[PPL_BOOLPOSNLAMPSTS_EQ_1])
+    if (EVT_flag->ConditionFlag[ESPAUTOHOLDACTVSTS_EQ_1] && 
+        EVT_flag->ConditionFlag[PPL_BOOLPOSNLAMPSTS_EQ_1])
     {
-        LGL_Set(ON)
+        LGL_Set(ON);
     }
 }
 
 void LGL_ESP_LBL_ON()
 {
-    if (EVT_Flag->ConditionFlag[ESPAUTOHOLDACTVSTS_EQ_1] && 
-        EVT_Flag->ConditionFlag[PLB_U8LBSTS_EQ_1])
+    if (EVT_flag->ConditionFlag[ESPAUTOHOLDACTVSTS_EQ_1] && 
+        EVT_flag->ConditionFlag[PLB_U8LBSTS_EQ_1])
     {
-        LGL_Set(ON)
+        LGL_Set(ON);
     }
 }
 
 void LGL_PRM_EEP_ON()
 {
-    if (EVT_Flag->ConditionFlag[PRM_U8POWERSTS_EQ_2] && 
-        EVT_Flag->ConditionFlag[EEP_LOGO_ENABLE_FLAG_EQ_1])
+    if (EVT_flag->ConditionFlag[PRM_U8POWERSTS_EQ_2] && 
+        EVT_flag->ConditionFlag[EEP_LOGO_ENABLE_FLAG_EQ_1])
     {
-        LGL_Set(ON)
+        LGL_Set(ON);
     }
 }
 
 void LGL_DLC_TUL_ON()
 {
-    if (EVT_Flag->ConditionFlag[DLC_U8TURNLIGHTTWICE_CHANGE_DLC_U8TURNLIGHTTWICE_PRE_SIGNALNUM])
+    if (EVT_flag->ConditionFlag[DLC_U8TURNLIGHTTWICE_CHANGE_DLC_U8TURNLIGHTTWICE_PRE])
     {
-        LGL_Set(ON)
-        addTimer(LGL_DLC_1500ms_TimeOut,Counter1500ms)
+        LGL_Set(ON);
+        addTimer(LGL_DLC_1500ms_TimeOut,Counter1500ms);
     }
 }
 
 void LGL_PRM_ON2NOTON()
 {
-    if (EVT_Flag->ConditionFlag[PRM_U8POWERSTS_CHANGE_PRM_U8POWERSTS_PRE_SIGNALNUM] && 
-        EVT_Flag->ConditionFlag[PRM_U8POWERSTS_PRE_EQ_2])
+    if (EVT_flag->ConditionFlag[PRM_U8POWERSTS_CHANGE_PRM_U8POWERSTS_PRE] && 
+        EVT_flag->ConditionFlag[PRM_U8POWERSTS_PRE_EQ_2])
     {
-        addTimer(LGL_PRM_350ms_TimeOut,Counter350ms)
+        addTimer(LGL_PRM_350ms_TimeOut,Counter350ms);
     }
 }
 
 void LGL_EEP_ENABLE2DISABLE()
 {
-    if (EVT_Flag->ConditionFlag[PRM_U8POWERSTS_EQ_2] && 
-        EVT_Flag->ConditionFlag[EEP_LOGO_ENABLE_FLAG_CHANGE_EEP_LOGO_ENABLE_FLAG_PRE_SIGNALNUM] && 
-        EVT_Flag->ConditionFlag[EEP_LOGO_ENABLE_FLAG_EQ_0])
+    if (EVT_flag->ConditionFlag[PRM_U8POWERSTS_EQ_2] && 
+        EVT_flag->ConditionFlag[EEP_LOGO_ENABLE_FLAG_CHANGE_EEP_LOGO_ENABLE_FLAG_PRE] && 
+        EVT_flag->ConditionFlag[EEP_LOGO_ENABLE_FLAG_EQ_0])
     {
-        addTimer(LGL_EEP_350ms_TimeOut,Counter350ms)
+        addTimer(LGL_EEP_350ms_TimeOut,Counter350ms);
     }
 }
 
 void LGL_SEE_REQ2NO()
 {
-    if (EVT_Flag->ConditionFlag[BDCSEEDSIGNAL_CHANGE_BDCSEEDSIGNAL_PRE_SIGNALNUM] && 
-        EVT_Flag->ConditionFlag[BDCSEEDSIGNAL_EQ_0])
+    if (EVT_flag->ConditionFlag[BDCSEEDSIGNAL_CHANGE_BDCSEEDSIGNAL_PRE] && 
+        EVT_flag->ConditionFlag[BDCSEEDSIGNAL_EQ_0])
     {
-        addTimer(LGL_SEE_350ms_TimeOut,Counter350ms)
+        addTimer(LGL_SEE_350ms_TimeOut,Counter350ms);
     }
 }
 
 void LGL_DLC_TIMEOUT()
 {
-    delTimer(LGL_DLC_1500ms_TimeOut)
+    delTimer(LGL_DLC_1500ms_TimeOut);
 }
 
 void LGL_PRM_TIMEOUT()
 {
-    delTimer(LGL_PRM_350ms_TimeOut)
+    delTimer(LGL_PRM_350ms_TimeOut);
 }
 
 void LGL_EEP_TIMEOUT()
 {
-    delTimer(LGL_EEP_350ms_TimeOut)
+    delTimer(LGL_EEP_350ms_TimeOut);
 }
 
 void LGL_SEE_TIMEOUT()
 {
-    delTimer(LGL_SEE_350ms_TimeOut)
+    delTimer(LGL_SEE_350ms_TimeOut);
 }
 
 void LGL_Normal_OFF()
 {
-    LGL_Normal_OFF1()
-    LGL_Normal_OFF2()
+    LGL_Normal_OFF1();
+    LGL_Normal_OFF2();
 }
 
 void LGL_Normal_OFF1()
 {
-    if (EVT_Flag->ConditionFlag[BDCSEEDSIGNAL_EQ_0] && 
-        EVT_Flag->ConditionFlag[BDCWLCMSIGNAL_EQ_0] && 
-        EVT_Flag->ConditionFlag[VCUGEARPOSN_EQ_0] && 
-        EVT_Flag->ConditionFlag[PPL_BOOLPOSNLAMPSTS_EQ_0] && 
-        EVT_Flag->ConditionFlag[PLB_U8LBSTS_EQ_0] && 
-        EVT_Flag->ConditionFlag[ESPAUTOHOLDACTVSTS_EQ_0] && 
-        EVT_Flag->ConditionFlag[PRM_U8POWERSTS_CHANGETO_0] && 
-        EVT_Flag->ConditionFlag[TIMEFLAGNUM_EQ_0])
+    if (EVT_flag->ConditionFlag[BDCSEEDSIGNAL_EQ_0] && 
+        EVT_flag->ConditionFlag[BDCWLCMSIGNAL_EQ_0] && 
+        EVT_flag->ConditionFlag[VCUGEARPOSN_EQ_0] && 
+        EVT_flag->ConditionFlag[PPL_BOOLPOSNLAMPSTS_EQ_0] && 
+        EVT_flag->ConditionFlag[PLB_U8LBSTS_EQ_0] && 
+        EVT_flag->ConditionFlag[ESPAUTOHOLDACTVSTS_EQ_0] && 
+        EVT_flag->ConditionFlag[PRM_U8POWERSTS_CHANGETO_0] && 
+        EVT_flag->ConditionFlag[TIMEFLAGNUM_EQ_0])
     {
-        LGL_Set(OFF)
+        LGL_Set(OFF);
     }
 }
 
 void LGL_Normal_OFF2()
 {
-    if (EVT_Flag->ConditionFlag[BDCSEEDSIGNAL_EQ_0] && 
-        EVT_Flag->ConditionFlag[BDCWLCMSIGNAL_EQ_0] && 
-        EVT_Flag->ConditionFlag[VCUGEARPOSN_EQ_0] && 
-        EVT_Flag->ConditionFlag[PPL_BOOLPOSNLAMPSTS_EQ_0] && 
-        EVT_Flag->ConditionFlag[PLB_U8LBSTS_EQ_0] && 
-        EVT_Flag->ConditionFlag[ESPAUTOHOLDACTVSTS_EQ_0] && 
-        EVT_Flag->ConditionFlag[EEP_LOGO_ENABLE_FLAG_EQ_0] && 
-        EVT_Flag->ConditionFlag[TIMEFLAGNUM_EQ_0])
+    if (EVT_flag->ConditionFlag[BDCSEEDSIGNAL_EQ_0] && 
+        EVT_flag->ConditionFlag[BDCWLCMSIGNAL_EQ_0] && 
+        EVT_flag->ConditionFlag[VCUGEARPOSN_EQ_0] && 
+        EVT_flag->ConditionFlag[PPL_BOOLPOSNLAMPSTS_EQ_0] && 
+        EVT_flag->ConditionFlag[PLB_U8LBSTS_EQ_0] && 
+        EVT_flag->ConditionFlag[ESPAUTOHOLDACTVSTS_EQ_0] && 
+        EVT_flag->ConditionFlag[EEP_LOGO_ENABLE_FLAG_EQ_0] && 
+        EVT_flag->ConditionFlag[TIMEFLAGNUM_EQ_0])
     {
-        LGL_Set(OFF)
+        LGL_Set(OFF);
     }
 }
 
