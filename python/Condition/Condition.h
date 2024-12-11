@@ -8,24 +8,24 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define PPL_boolPosnLampSts 0
-#define PPL_boolPosnLampSts_Pre 1
-#define EEP_LOGO_ENABLE_FLAG 0
-#define EEP_LOGO_ENABLE_FLAG_Pre 1
-#define BdcSeedsignal 0
-#define BdcSeedsignal_Pre 1
-#define BdcWlcmsignal 2
-#define BdcWlcmsignal_Pre 3
-#define DLC_u8TurnLightTwice 4
-#define DLC_u8TurnLightTwice_Pre 5
-#define EspAutoHoldActvSts 6
-#define EspAutoHoldActvSts_Pre 7
-#define PLB_u8LBSts 8
-#define PLB_u8LBSts_Pre 9
-#define PRM_u8PowerSts 10
-#define PRM_u8PowerSts_Pre 11
-#define VcuGearPosn 12
-#define VcuGearPosn_Pre 13
+#define PPL_boolPosnLampSts_SIGNALNUM 0
+#define PPL_boolPosnLampSts_Pre_SIGNALNUM 1
+#define EEP_LOGO_ENABLE_FLAG_SIGNALNUM 0
+#define EEP_LOGO_ENABLE_FLAG_Pre_SIGNALNUM 1
+#define BdcSeedsignal_SIGNALNUM 0
+#define BdcSeedsignal_Pre_SIGNALNUM 1
+#define BdcWlcmsignal_SIGNALNUM 2
+#define BdcWlcmsignal_Pre_SIGNALNUM 3
+#define DLC_u8TurnLightTwice_SIGNALNUM 4
+#define DLC_u8TurnLightTwice_Pre_SIGNALNUM 5
+#define EspAutoHoldActvSts_SIGNALNUM 6
+#define EspAutoHoldActvSts_Pre_SIGNALNUM 7
+#define PLB_u8LBSts_SIGNALNUM 8
+#define PLB_u8LBSts_Pre_SIGNALNUM 9
+#define PRM_u8PowerSts_SIGNALNUM 10
+#define PRM_u8PowerSts_Pre_SIGNALNUM 11
+#define VcuGearPosn_SIGNALNUM 12
+#define VcuGearPosn_Pre_SIGNALNUM 13
 
 #define CONDITION_TYPE_NUMBER 0
 #define CONDITION_TYPE_SIGNAL 1
@@ -72,11 +72,11 @@
 #define CONDITION_NUMBER 22
 
 typedef struct Condition {
-Bit Type;
-uint8 Threshold;
-uint8 Symbol;
-void (*EVT)();
-uint8 ConditionID;
+    Bit Type;
+    uint8 Threshold;
+    uint8 Symbol;
+    void (*EVT)();
+    uint8 ConditionID;
 } Condition;
 
 enum SignalType {

@@ -43,7 +43,7 @@ def write_condition_header():
         if row.loc['Type'] != Signal_Type:
             Signal_Type = row.loc['Type']
             Signal_Index = 0
-        Signal_Number_Macro_String += f"#define {row.loc['SignalName']} {Signal_Index}\n"
+        Signal_Number_Macro_String += f"#define {row.loc['SignalName']}_SIGNALNUM {Signal_Index}\n"
         Signal_Index += 1
     # print(Signal_Number_Macro_String)
 
@@ -94,11 +94,11 @@ def write_condition_header():
     Condition_Header_Header_String += f"#define CONDITION_NUMBER {ConditionNum}\n"
     Condition_Header_Header_String += '''
 typedef struct Condition {
-Bit Type;
-uint8 Threshold;
-uint8 Symbol;
-void (*EVT)();
-uint8 ConditionID;
+    Bit Type;
+    uint8 Threshold;
+    uint8 Symbol;
+    void (*EVT)();
+    uint8 ConditionID;
 } Condition;
 
 enum SignalType {
