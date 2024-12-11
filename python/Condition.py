@@ -1,4 +1,6 @@
 import os
+from collections import defaultdict
+
 import pandas as pd
 import openpyxl
 import warnings
@@ -20,6 +22,7 @@ Condition_Header_Header_String = '''
 #include "EVT/Logic/Logic.h"
 #include <sgn/signal_api.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 '''
 Condition_Source_Header_String = '''
@@ -31,9 +34,17 @@ def write_condition_header():
     global Condition_Header_Header_String
     ConditionNum = 0
     Signal_Number_Macro_String = ''
+    Signal_Index = 0
+    Signal_Type = None
     for i, row in SignalDataFrame.iterrows():
-        Signal_Number_Macro_String += f"#define {row.loc['SignalName']} {i}\n"
-    # print(Signal_Number_Macro_String)
+        if Signal_Type is None:
+            Signal_Type = row.loc['Type']
+        if row.loc['Type'] != Signal_Type:
+            Signal_Type = row.loc['Type']
+            Signal_Index = 0
+        Signal_Number_Macro_String += f"#define {row.loc['SignalName']} {Signal_Index}\n"
+        Signal_Index += 1
+    print(Signal_Number_Macro_String)
     Threshold_Type_Macro_String = ''
     Condition_Macro_String = ''
     Symbol_Macro_String = ''
@@ -50,6 +61,20 @@ def write_condition_header():
     for i, row in TimeFlagDataFrame.iterrows():
         if pd.notna(row.loc['FlagName']):
             Time_Macro_String += f"#define {row.loc['FlagName']} {i}\n"
+
+    Type = None
+    Type_Num = 0
+    EVT_FLAG_String = ''
+    for i, row in SignalDataFrame.iterrows():
+        if Type is None:
+            Type = row.loc['Type']
+        if row.loc['Type'] != Type:
+            EVT_FLAG_String += f"    {Type} Signal_{Type}[{Type_Num}];\n"
+            Type_Num = 0
+            Type = row.loc['Type']
+        Type_Num += 1
+        if i == len(SignalDataFrame) - 1:
+            EVT_FLAG_String += f"    {Type} Signal_{Type}[{Type_Num}];\n"
     SignalNum = len(SignalDataFrame)
     TimeFlagNum = len(TimeFlagDataFrame)
     Condition_Header_Header_String += Signal_Number_Macro_String + '\n'
@@ -62,32 +87,47 @@ def write_condition_header():
     Condition_Header_Header_String += f"#define CONDITION_NUMBER {ConditionNum}\n"
     Condition_Header_Header_String += '''
 typedef struct Condition {
-bool Type;
-T_u8 Threshold;
-T_u8 Symbol;
+Bit Type;
+uint8 Threshold;
+uint8 Symbol;
 void (*EVT)();
-T_u8 ConditionID;
+uint8 ConditionID;
 } Condition;
 
+enum SignalType {
+    Type_Bit,
+    Type_double,
+    Type_EEPROM_U8,
+    Type_int16,
+    Type_int32,
+    Type_int64,
+    Type_int8,
+    Type_single,
+    Type_uint16,
+    Type_uint32,
+    Type_uint64,
+    Type_uint8,
+}
+
 typedef struct SignalCondition {
-    T_u8 Signal;
-    T_u8 Len;
+    uint8 Signal;
+    enum SignalType Type;
+    uint8 Len;
     const Condition* Condition;
 } SignalCondition;
 
-typedef struct EVT_FLAG {
-    T_u8 SignalNum[SIGNAL_NUM];
-    T_u8 SignalPreNum[SIGNAL_NUM];
-    T_u8 LGL_TimeOutFlagNum;
-    T_bit TimeOutFlag[TIMEOUT_NUM];
-    T_bit ConditionFlag[CONDITION_NUM];
-} EVT_FLAG;
-
-extern EVT_FLAG* EVT_flag;
-static const SignalCondition SignalConditionArray[SIGNAL_NUM];
-static const Condition TimeOutActionArray[TIMEOUT_NUM];
-#endif /*CONDITION_H_*/
 '''
+
+    Condition_Header_Header_String += (f"typedef struct EVT_FLAG {{\n"
+                                       f"{EVT_FLAG_String}"
+                                       f"    uint8 TimeOutFlagNum;\n"
+                                       f"    Bit TimeOutFlag[TIMEOUT_NUM];\n"
+                                       f"    Bit ConditionFlag[CONDITION_NUMBER];\n"
+                                       f"}} EVT_FLAG;\n\n"
+                                       f"extern EVT_FLAG* EVT_flag;\n"
+                                       f"static const SignalCondition SignalConditionArray[SIGNAL_NUM];\n"
+                                       f"static const Condition TimeOutActionArray[TIMEOUT_NUM];\n"
+                                       f"#endif // CONDITION_H_\n")
     # print(Condition_Header_Header_String)
     if not os.path.exists('Condition'):
         os.makedirs('Condition')
@@ -123,12 +163,14 @@ def write_condition_source():
         if Signal_Name is None:
             Signal_Name = row.loc['SignalName']
         if row.loc['SignalName'] != Signal_Name:
-            Condition_Array_String += f"{{{Signal_Name}_SIGNALNUM, {Signal_Condition_Number}, &{Signal_Name}_Condition}},\n"
+            Signal_Type = SignalDataFrame.loc[SignalDataFrame['SignalName'] == Signal_Name, 'Type'].values[0]
+            Condition_Array_String += f"{{{Signal_Name}_SIGNALNUM, Type_{Signal_Type} , {Signal_Condition_Number} , &{Signal_Name}_Condition}},\n"
             Signal_Condition_Number = 0
             Signal_Name = row.loc['SignalName']
         Signal_Condition_Number += 1
         if i == len(ConditionDataFrame) - 1:
-            Condition_Array_String += f"{{{Signal_Name}_SIGNALNUM, {Signal_Condition_Number}, &{Signal_Name}_Condition}}}};\n"
+            Signal_Type = SignalDataFrame.loc[SignalDataFrame['SignalName'] == Signal_Name, 'Type'].values[0]
+            Condition_Array_String += f"{{{Signal_Name}_SIGNALNUM, Type_{Signal_Type}, {Signal_Condition_Number} , &{Signal_Name}_Condition}}}};\n"
     # print(Condition_Array_String)
     with open(CONDITION_SOURCE_PATH, 'w') as f:
         f.write(Condition_Source_Header_String)

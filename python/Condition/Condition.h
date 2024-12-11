@@ -6,25 +6,26 @@
 #include "EVT/Logic/Logic.h"
 #include <sgn/signal_api.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #define PPL_boolPosnLampSts 0
 #define PPL_boolPosnLampSts_Pre 1
-#define EEP_LOGO_ENABLE_FLAG 2
-#define EEP_LOGO_ENABLE_FLAG_Pre 3
-#define BdcSeedsignal 4
-#define BdcSeedsignal_Pre 5
-#define BdcWlcmsignal 6
-#define BdcWlcmsignal_Pre 7
-#define DLC_u8TurnLightTwice 8
-#define DLC_u8TurnLightTwice_Pre 9
-#define EspAutoHoldActvSts 10
-#define EspAutoHoldActvSts_Pre 11
-#define PLB_u8LBSts 12
-#define PLB_u8LBSts_Pre 13
-#define PRM_u8PowerSts 14
-#define PRM_u8PowerSts_Pre 15
-#define VcuGearPosn 16
-#define VcuGearPosn_Pre 17
+#define EEP_LOGO_ENABLE_FLAG 0
+#define EEP_LOGO_ENABLE_FLAG_Pre 1
+#define BdcSeedsignal 0
+#define BdcSeedsignal_Pre 1
+#define BdcWlcmsignal 2
+#define BdcWlcmsignal_Pre 3
+#define DLC_u8TurnLightTwice 4
+#define DLC_u8TurnLightTwice_Pre 5
+#define EspAutoHoldActvSts 6
+#define EspAutoHoldActvSts_Pre 7
+#define PLB_u8LBSts 8
+#define PLB_u8LBSts_Pre 9
+#define PRM_u8PowerSts 10
+#define PRM_u8PowerSts_Pre 11
+#define VcuGearPosn 12
+#define VcuGearPosn_Pre 13
 
 #define CONDITION_TYPE_NUMBER 0
 #define CONDITION_TYPE_SIGNAL 1
@@ -71,28 +72,45 @@
 #define CONDITION_NUMBER 22
 
 typedef struct Condition {
-bool Type;
-T_u8 Threshold;
-T_u8 Symbol;
+Bit Type;
+uint8 Threshold;
+uint8 Symbol;
 void (*EVT)();
-T_u8 ConditionID;
+uint8 ConditionID;
 } Condition;
 
+enum SignalType {
+    Type_Bit,
+    Type_double,
+    Type_EEPROM_U8,
+    Type_int16,
+    Type_int32,
+    Type_int64,
+    Type_int8,
+    Type_single,
+    Type_uint16,
+    Type_uint32,
+    Type_uint64,
+    Type_uint8,
+}
+
 typedef struct SignalCondition {
-    T_u8 Signal;
-    T_u8 Len;
+    uint8 Signal;
+    enum SignalType Type;
+    uint8 Len;
     const Condition* Condition;
 } SignalCondition;
 
 typedef struct EVT_FLAG {
-    T_u8 SignalNum[SIGNAL_NUM];
-    T_u8 SignalPreNum[SIGNAL_NUM];
-    T_u8 LGL_TimeOutFlagNum;
-    T_bit TimeOutFlag[TIMEOUT_NUM];
-    T_bit ConditionFlag[CONDITION_NUM];
+    Bit Signal_Bit[2];
+    EEPROM_U8 Signal_EEPROM_U8[2];
+    uint8 Signal_uint8[14];
+    uint8 TimeOutFlagNum;
+    Bit TimeOutFlag[TIMEOUT_NUM];
+    Bit ConditionFlag[CONDITION_NUMBER];
 } EVT_FLAG;
 
 extern EVT_FLAG* EVT_flag;
 static const SignalCondition SignalConditionArray[SIGNAL_NUM];
 static const Condition TimeOutActionArray[TIMEOUT_NUM];
-#endif /*CONDITION_H_*/
+#endif // CONDITION_H_
