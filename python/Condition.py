@@ -32,7 +32,8 @@ Condition_Source_Header_String = '''
 
 def write_condition_header():
     global Condition_Header_Header_String
-    ConditionNum = 0
+
+    # SignalIndex
     Signal_Number_Macro_String = ''
     Signal_Index = 0
     Signal_Type = None
@@ -44,7 +45,10 @@ def write_condition_header():
             Signal_Index = 0
         Signal_Number_Macro_String += f"#define {row.loc['SignalName']} {Signal_Index}\n"
         Signal_Index += 1
-    print(Signal_Number_Macro_String)
+    # print(Signal_Number_Macro_String)
+
+    # ConditionMacro
+    ConditionNum = 0
     Threshold_Type_Macro_String = ''
     Condition_Macro_String = ''
     Symbol_Macro_String = ''
@@ -58,6 +62,7 @@ def write_condition_header():
             Condition_Macro_String += f"#define {row.loc['ConditionMacro']} {i}\n"
             ConditionNum += 1
 
+    # TimeFlag
     for i, row in TimeFlagDataFrame.iterrows():
         if pd.notna(row.loc['FlagName']):
             Time_Macro_String += f"#define {row.loc['FlagName']} {i}\n"
@@ -77,6 +82,8 @@ def write_condition_header():
             EVT_FLAG_String += f"    {Type} Signal_{Type}[{Type_Num}];\n"
     SignalNum = len(SignalDataFrame)
     TimeFlagNum = len(TimeFlagDataFrame)
+
+    # combine all strings
     Condition_Header_Header_String += Signal_Number_Macro_String + '\n'
     Condition_Header_Header_String += Threshold_Type_Macro_String + '\n'
     Condition_Header_Header_String += Condition_Macro_String + '\n'
@@ -117,7 +124,7 @@ typedef struct SignalCondition {
 } SignalCondition;
 
 '''
-
+    # define EVT_FLAG struct
     Condition_Header_Header_String += (f"typedef struct EVT_FLAG {{\n"
                                        f"{EVT_FLAG_String}"
                                        f"    uint8 TimeOutFlagNum;\n"
@@ -128,7 +135,10 @@ typedef struct SignalCondition {
                                        f"static const SignalCondition SignalConditionArray[SIGNAL_NUM];\n"
                                        f"static const Condition TimeOutActionArray[TIMEOUT_NUM];\n"
                                        f"#endif // CONDITION_H_\n")
+
     # print(Condition_Header_Header_String)
+
+    # Sava into file
     if not os.path.exists('Condition'):
         os.makedirs('Condition')
     with open(CONDITION_HEADER_PATH, 'w') as f:
@@ -136,6 +146,7 @@ typedef struct SignalCondition {
 
 
 def write_condition_source():
+    # Condition
     Condition_String = ''
     Condition_Signal_String = ''
     Signal_Condition_Number = 0
@@ -145,7 +156,7 @@ def write_condition_source():
             Signal_Name = row.loc['SignalName']
             Condition_String = ''
         if row.loc['SignalName'] != Signal_Name:
-            Condition_Signal_String += f"const Condition {Signal_Name}_Condition [{Signal_Condition_Number}] = {{{Condition_String}}}\n"
+            Condition_Signal_String += f"const Condition {Signal_Name}_Condition [{Signal_Condition_Number}] = {{{Condition_String}}};\n"
             Signal_Condition_Number = 0
             Signal_Name = row.loc['SignalName']
             Condition_String = ''
@@ -154,9 +165,11 @@ def write_condition_source():
         Condition_String += f"{{{row.loc['ThresholdType']}, {row.loc['Threshold']}, {row.loc['Symbol']}, &{row.loc['EVT']}, {row.loc['Macro']}}}"
         Signal_Condition_Number += 1
         if i == len(ConditionDataFrame) - 1:
-            Condition_Signal_String += f"const Condition {Signal_Name}_Condition [{Signal_Condition_Number}] = {{{Condition_String}}}\n"
+            Condition_Signal_String += f"const Condition {Signal_Name}_Condition [{Signal_Condition_Number}] = {{{Condition_String}}};\n"
     # print(Condition_Signal_String)
-    Condition_Array_String = 'static const SignalCondition SignalConditionArray[SIGNAL_NUM] ={\n'
+
+    # SignalConditionArray
+    Condition_Array_String = 'static const SignalCondition SignalConditionArray[SIGNAL_NUM] = {\n'
     Signal_Name = None
     Signal_Condition_Number = 0
     for i, row in ConditionDataFrame.iterrows():
@@ -171,11 +184,21 @@ def write_condition_source():
         if i == len(ConditionDataFrame) - 1:
             Signal_Type = SignalDataFrame.loc[SignalDataFrame['SignalName'] == Signal_Name, 'Type'].values[0]
             Condition_Array_String += f"{{{Signal_Name}_SIGNALNUM, Type_{Signal_Type}, {Signal_Condition_Number} , &{Signal_Name}_Condition}}}};\n"
+
+    # TIMEOUT_ACTION_ARRAY
+    Time_Out_Action_String = 'const Condition TimeOutActionArray[TIMEOUT_NUM] = {\n'
+    for i, row in TimeFlagDataFrame.iterrows():
+        if pd.notna(row.loc['FlagName']):
+            Time_Out_Action_String += f"{{1,EQ,{row.loc['FlagName']},0}}\n"
+    Time_Out_Action_String += '};\n'
+    # print(Time_Out_Action_String)
+
     # print(Condition_Array_String)
     with open(CONDITION_SOURCE_PATH, 'w') as f:
         f.write(Condition_Source_Header_String)
-        f.write(Condition_Signal_String)
-        f.write(Condition_Array_String)
+        f.write(Condition_Signal_String + '\n')
+        f.write(Condition_Array_String + '\n')
+        f.write(Time_Out_Action_String + '\n')
     pass
 
 
