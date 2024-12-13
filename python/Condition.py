@@ -30,175 +30,295 @@ Condition_Source_Header_String = '''
 '''
 
 
-def write_condition_header():
-    global Condition_Header_Header_String
-
-    # SignalIndex
-    Signal_Number_Macro_String = ''
-    Signal_Index = 0
+def get_signal_macro_string():
+    Signal_Macro_String = ''
+    Signal_Macro_Index = 0
     Signal_Type = None
-    for i, row in SignalDataFrame.iterrows():
-        if Signal_Type is None:
+    Signal_Type_dict = {row['VariableType']: 0
+                        for index, row in ListDataFrame.iterrows()
+                        if pd.notna(row['VariableType']) and row['VariableType'] != ''}
+    for index, row in SignalDataFrame.iterrows():
+        if Signal_Type is None or Signal_Type != row.loc['Type']:
             Signal_Type = row.loc['Type']
-        if row.loc['Type'] != Signal_Type:
-            Signal_Type = row.loc['Type']
-            Signal_Index = 0
-        Signal_Number_Macro_String += f"#define {row.loc['SignalName']}_SIGNALNUM {Signal_Index}\n"
-        Signal_Index += 1
-    # print(Signal_Number_Macro_String)
+            Signal_Macro_Index = 0
+        Signal_Macro_String += f"#define {row.loc['Macro']} {Signal_Macro_Index}\n"
+        Signal_Type_dict[Signal_Type] += 1
+        Signal_Macro_Index += 1
+    Signal_Macro_String += '\n\n'
+    for key, value in Signal_Type_dict.items():
+        Signal_Macro_String += f"#define {key.upper()}_SIGNAL_NUMBER {value}\n"
+    Signal_Macro_String += '\n\n'
+    # print(Signal_Macro_String)
+    return Signal_Macro_String
+    pass
 
-    # ConditionMacro
-    ConditionNum = 0
-    Threshold_Type_Macro_String = ''
+
+def get_Condition_Struct_String():
+    Condition_Struct_String = ''
+    for index, row in ListDataFrame.iterrows():
+        if pd.notna(row['VariableType']) and row['VariableType'] != '':
+            Struct_String = f"typedef struct \n{{\n"
+            Struct_String += f"\t{row['VariableType']} Threshold;\n"
+            Struct_String += f"\tuint8 Symbol;\n"
+            Struct_String += f"\tvoid (*EVT)();\n"
+            Struct_String += f"\tuint8 ConditionIndex;\n"
+            Struct_String += f"}}{row.loc['VariableType']}Condition;\n\n"
+            Condition_Struct_String += Struct_String
+    Condition_Struct_String += "typedef struct \n{\n"
+    Condition_Struct_String += "\tuint8 SignalIndex;\n"
+    Condition_Struct_String += "\tuint8 Symbol;\n"
+    Condition_Struct_String += "\tvoid (*EVT)();\n"
+    Condition_Struct_String += "\tuint8 ConditionIndex;\n"
+    Condition_Struct_String += "}SignalCondition;\n\n"
+
+    Condition_Struct_String += "typedef struct \n{\n"
+    Condition_Struct_String += "\tBit Threshold;\n"
+    Condition_Struct_String += "\tuint8 Symbol;\n"
+    Condition_Struct_String += "\tvoid (*EVT)();\n"
+    Condition_Struct_String += "\tuint8 ConditionIndex;\n"
+    Condition_Struct_String += "}TimeOutCondition;\n\n"
+    # print(Condition_Struct_String)
+    return Condition_Struct_String
+    pass
+
+
+def get_Condition_Info_String():
+    Condition_Info_String = ''
+    for index, row in ListDataFrame.iterrows():
+        if pd.notna(row['VariableType']) and row['VariableType'] != '':
+            Condition_Info_Struct_String = f"typedef struct \n{{\n"
+            Condition_Info_Struct_String += f"\tuint8 SignalIndex;\n"
+            Condition_Info_Struct_String += f"\tuint8 length;\n"
+            Condition_Info_Struct_String += f"\t{row.loc['VariableType']}Condition *Conditions;\n"
+            Condition_Info_Struct_String += f"}}{row.loc['VariableType']}SignalConditionInfo;\n\n"
+            Condition_Info_String += Condition_Info_Struct_String
+    Condition_Info_String += "typedef struct \n{\n"
+    Condition_Info_String += "\tuint8 SignalIndex;\n"
+    Condition_Info_String += "\tuint8 length;\n"
+    Condition_Info_String += "\tSignalCondition *Conditions;\n"
+    Condition_Info_String += "}SignalConditionInfo;\n\n"
+    # print(Condition_Info_String)
+    return Condition_Info_String
+    pass
+
+
+def get_Signals_And_Conditions_String():
+    Signals_And_Conditions_String = 'typedef struct \n{\n'
+    for index, row in ListDataFrame.iterrows():
+        if pd.notna(row['VariableType']) and row['VariableType'] != '':
+            Signals_And_Conditions_String += f"\t{row.loc['VariableType']} Signal_{row.loc['VariableType']}[{row.loc['VariableType'].upper()}_SIGNAL_NUMBER];\n"
+    Signals_And_Conditions_String += "\n"
+    Signals_And_Conditions_String += "\tuint8 TimeOutFlagNum;\n"
+    Signals_And_Conditions_String += "\tBit TimeOutFlag[TIME_FLAG_NUMBER];\n"
+    Signals_And_Conditions_String += "\tBit ConditionFlag[CONDITION_NUMBER];\n"
+    Signals_And_Conditions_String += "}SignalsAndConditions;\n\n"
+    # print(Signals_And_Conditions_String)
+    return Signals_And_Conditions_String
+    pass
+
+
+def get_Condition_Info_Array_String():
+    Condition_Info_Array_String = ''
+    for index, row in ListDataFrame.iterrows():
+        if pd.notna(row['VariableType']) and row['VariableType'] != '':
+            Condition_Info_Array_String += f"static const {row.loc['VariableType']}SignalConditionInfo {row.loc['VariableType']}ConditionInfoArray[{row.loc['VariableType'].upper()}_SIGNAL_NUMBER];\n"
+    Condition_Info_Array_String += "\n\n"
+    for index, row in ListDataFrame.iterrows():
+        if pd.notna(row['VariableType']) and row['VariableType'] != '':
+            Condition_Info_Array_String += f"static const SignalConditionInfo {row.loc['VariableType']}SignalConditionInfoArray[{row.loc['VariableType'].upper()}_SIGNAL_NUMBER];\n"
+    Condition_Info_Array_String += "\n\n"
+    Condition_Info_Array_String += "static const TimeOutCondition TimeOutActionArray[TIME_FLAG_NUMBER];\n"
+    # print(Condition_Info_Array_String)
+    return Condition_Info_Array_String
+    pass
+
+
+def get_time_flag_macro_string():
+    Time_flag_macro_string = ''
+    for index, row in TimeFlagDataFrame.iterrows():
+        Time_flag_macro_string += f"#define {row.loc['FlagName']} {index}\n"
+    Time_flag_macro_string += '\n\n'
+    # print(Time_flag_macro_string)
+    return Time_flag_macro_string
+    pass
+
+
+def get_condition_macro_string():
     Condition_Macro_String = ''
-    Symbol_Macro_String = ''
-    Time_Macro_String = ''
-    for i, row in ListDataFrame.iterrows():
-        if pd.notna(row.loc['Symbol']):
-            Symbol_Macro_String += f"#define {row.loc['Symbol']} {i}\n"
-        if pd.notna(row.loc['ThresholdType']):
-            Threshold_Type_Macro_String += f"#define {row.loc['ThresholdType']} {i}\n"
-        if pd.notna(row.loc['ConditionMacro']):
-            Condition_Macro_String += f"#define {row.loc['ConditionMacro']} {i}\n"
-            ConditionNum += 1
+    for index, row in ListDataFrame.iterrows():
+        if pd.notna(row.loc['ConditionMacro']) and row['ConditionMacro'] != '':
+            Condition_Macro_String += f"#define {row.loc['ConditionMacro']} {index}\n"
+    Condition_Macro_String += '\n\n'
+    # print(Condition_Macro_String)
+    return Condition_Macro_String
+    pass
 
-    # TimeFlag
-    for i, row in TimeFlagDataFrame.iterrows():
-        if pd.notna(row.loc['FlagName']):
-            Time_Macro_String += f"#define {row.loc['FlagName']} {i}\n"
 
-    Type = None
-    Type_Num = 0
-    EVT_FLAG_String = ''
-    for i, row in SignalDataFrame.iterrows():
-        if Type is None:
-            Type = row.loc['Type']
-        if row.loc['Type'] != Type:
-            EVT_FLAG_String += f"    {Type} Signal_{Type}[{Type_Num}];\n"
-            Type_Num = 0
-            Type = row.loc['Type']
-        Type_Num += 1
-        if i == len(SignalDataFrame) - 1:
-            EVT_FLAG_String += f"    {Type} Signal_{Type}[{Type_Num}];\n"
-    SignalNum = len(SignalDataFrame)
-    TimeFlagNum = len(TimeFlagDataFrame)
+def get_symbol_macro_string():
+    Symbol_macro_string = ''
+    for index, row in ListDataFrame.iterrows():
+        if pd.notna(row.loc['Symbol']) and row['Symbol'] != '':
+            Symbol_macro_string += f"#define {row.loc['Symbol']} {index}\n"
+    Symbol_macro_string += '\n\n'
+    # print(Symbol_macro_string)
+    return Symbol_macro_string
+    pass
 
-    # combine all strings
-    Condition_Header_Header_String += Signal_Number_Macro_String + '\n'
-    Condition_Header_Header_String += Threshold_Type_Macro_String + '\n'
-    Condition_Header_Header_String += Condition_Macro_String + '\n'
-    Condition_Header_Header_String += Symbol_Macro_String + '\n'
-    Condition_Header_Header_String += Time_Macro_String + '\n'
-    Condition_Header_Header_String += f"#define SIGNAL_NUMBER {SignalNum}\n"
-    Condition_Header_Header_String += f"#define TIME_FLAG_NUMBER {TimeFlagNum}\n"
-    Condition_Header_Header_String += f"#define CONDITION_NUMBER {ConditionNum}\n"
-    Condition_Header_Header_String += '''
-typedef struct Condition {
-    Bit Type;
-    uint8 Threshold;
-    uint8 Symbol;
-    void (*EVT)();
-    uint8 ConditionID;
-} Condition;
 
-enum SignalType {
-    Type_Bit,
-    Type_double,
-    Type_EEPROM_U8,
-    Type_int16,
-    Type_int32,
-    Type_int64,
-    Type_int8,
-    Type_single,
-    Type_uint16,
-    Type_uint32,
-    Type_uint64,
-    Type_uint8,
-};
-
-typedef struct SignalCondition {
-    uint8 Signal;
-    enum SignalType Type;
-    uint8 Len;
-    const Condition* Condition;
-} SignalCondition;
-
-'''
-    # define EVT_FLAG struct
-    Condition_Header_Header_String += (f"typedef struct EVT_FLAG {{\n"
-                                       f"{EVT_FLAG_String}"
-                                       f"    uint8 TimeOutFlagNum;\n"
-                                       f"    Bit TimeOutFlag[TIME_FLAG_NUMBER];\n"
-                                       f"    Bit ConditionFlag[CONDITION_NUMBER];\n"
-                                       f"}} EVT_FLAG;\n\n"
-                                       f"extern EVT_FLAG* EVT_flag;\n"
-                                       f"static const SignalCondition SignalConditionArray[SIGNAL_NUMBER];\n"
-                                       f"static const Condition TimeOutActionArray[TIME_FLAG_NUMBER];\n"
-                                       f"#endif // CONDITION_H_\n")
-
-    # print(Condition_Header_Header_String)
-
-    # Sava into file
+def write_condition_header():
+    Signal_Macro_String = get_signal_macro_string()
+    Symbol_Macro_String = get_symbol_macro_string()
+    Condition_Macro_String = get_condition_macro_string()
+    TimeOut_Flag_Macro_String = get_time_flag_macro_string()
+    Time_Flag_Number_Macro_String = f"#define TIME_FLAG_NUMBER {len(TimeFlagDataFrame)}\n"
+    Condition_Number_Macro_String = f"#define CONDITION_NUMBER {len(ListDataFrame)}\n"
+    Signal_Condition_Struct_String = get_Condition_Struct_String()
+    Signal_Condition_Info_String = get_Condition_Info_String()
+    Signals_And_Conditions_String = get_Signals_And_Conditions_String()
+    Signal_Condition_Info_Array_String = get_Condition_Info_Array_String()
     if not os.path.exists('Condition'):
         os.makedirs('Condition')
     with open(CONDITION_HEADER_PATH, 'w') as f:
         f.write(Condition_Header_Header_String)
+        f.write(Signal_Macro_String)
+        f.write(Symbol_Macro_String)
+        f.write(Condition_Macro_String)
+        f.write(TimeOut_Flag_Macro_String)
+        f.write(Time_Flag_Number_Macro_String)
+        f.write(Condition_Number_Macro_String)
+        f.write(Signal_Condition_Struct_String)
+        f.write(Signal_Condition_Info_String)
+        f.write(Signals_And_Conditions_String)
+        f.write(Signal_Condition_Info_Array_String)
+        f.write('extern SignalsAndConditions *P_SignalsAndConditions;\n')
+        f.write("#endif\n")
+    pass
+
+
+def get_signal_condition_string():
+    Signal_Name = None
+    Signal_Type = None
+    Signal_Condition_String = ''
+    Condition_Number = 0
+    Condition_String = ''
+    for index, row in SignalDataFrame.iterrows():
+        Signal_Name = row.loc['SignalName']
+        Signal_Type = row.loc['Type']
+        filtered_df = ConditionDataFrame.loc[ConditionDataFrame['SignalName'] == Signal_Name]
+        for filtered_index, filtered_row in filtered_df.iterrows():
+            if filtered_row.loc['ThresholdType'] != 'CONDITION_TYPE_SIGNAL':
+                if Condition_Number != 0:
+                    Condition_String += " , "
+                Condition_String += f"{{{filtered_row.loc['Threshold']}, {filtered_row.loc['Symbol']}, {filtered_row.loc['EVT']}, {filtered_row.loc['Macro']}}}"
+                Condition_Number += 1
+        Signal_Condition_String += f"const {Signal_Type}Condition {Signal_Name}_Conditions[{Condition_Number}] = {{{Condition_String}}};\n"
+        Condition_String = ''
+        Condition_Number = 0
+    Signal_Condition_String += "\n\n"
+    for index, row in SignalDataFrame.iterrows():
+        Signal_Name = row.loc['SignalName']
+        Signal_Type = row.loc['Type']
+        filtered_df = ConditionDataFrame.loc[ConditionDataFrame['SignalName'] == Signal_Name]
+        for filtered_index, filtered_row in filtered_df.iterrows():
+            if filtered_row.loc['ThresholdType'] == 'CONDITION_TYPE_SIGNAL':
+                if Condition_Number != 0:
+                    Condition_String += " , "
+                Condition_String += f"{{{filtered_row.loc['Threshold']}, {filtered_row.loc['Symbol']}, {filtered_row.loc['EVT']}, {filtered_row.loc['Macro']}}}"
+                Condition_Number += 1
+        Signal_Condition_String += f"const SignalCondition {Signal_Name}_SignalConditions[{Condition_Number}] = {{{Condition_String}}};\n"
+        Condition_String = ''
+        Condition_Number = 0
+    Signal_Condition_String += "\n\n"
+    # print(Signal_Condition_String)
+    return Signal_Condition_String
+    pass
+
+
+def get_condition_number_type_info_string(matching_type_rows):
+    condition_number_type_info_string = ''
+    Signal_Name = None
+    Condition_Length = 0
+    matching_type_rows.reset_index(inplace=True, drop=True)
+    for index, row in matching_type_rows.iterrows():
+        Signal_Name = row.loc['SignalName']
+        filtered_df = ConditionDataFrame.loc[ConditionDataFrame['SignalName'] == Signal_Name]
+        filtered_df = filtered_df[filtered_df['ThresholdType'] != 'CONDITION_TYPE_SIGNAL']
+        Condition_Length = len(filtered_df)
+        if index != 0:
+            condition_number_type_info_string += " ,\n"
+        condition_number_type_info_string += f"{{{Signal_Name}_SIGNALNUM, {Condition_Length}, {Signal_Name}_Conditions}}"
+    # print(condition_number_type_info_string)
+    return condition_number_type_info_string
+
+    pass
+
+
+def get_signal_number_condition_info():
+    signal_number_condition_info_string = ''
+    Signal_Name = None
+    Signal_Type = None
+    Type_Number = 0
+    signal_info_String = ''
+    for index, row in ListDataFrame.iterrows():
+        if pd.notna(row['VariableType']) and row['VariableType'] != '':
+            Signal_Type = row['VariableType']
+            matching_type_rows = SignalDataFrame[SignalDataFrame['Type'] == Signal_Type]
+            Type_Number = len(matching_type_rows)
+            Condition_Number_Type_Info_String = get_condition_number_type_info_string(matching_type_rows)
+            signal_number_condition_info_string += f"static const {Signal_Type}SignalConditionInfo {Signal_Type}ConditionInfoArray[{Type_Number}] = {{\n{Condition_Number_Type_Info_String} \n}};\n\n"
+    # print(signal_number_condition_info_string)
+    return signal_number_condition_info_string
+    pass
+
+
+def get_condition_signal_type_info_string(matching_type_rows):
+    condition_signal_type_info_string = ''
+    Signal_Name = None
+    Condition_Length = 0
+    matching_type_rows.reset_index(inplace=True, drop=True)
+    for index, row in matching_type_rows.iterrows():
+        Signal_Name = row.loc['SignalName']
+        filtered_df = ConditionDataFrame.loc[ConditionDataFrame['SignalName'] == Signal_Name]
+        filtered_df = filtered_df[filtered_df['ThresholdType'] == 'CONDITION_TYPE_SIGNAL']
+        Condition_Length = len(filtered_df)
+        if index != 0:
+            condition_signal_type_info_string += " ,\n"
+        condition_signal_type_info_string += f"{{{Signal_Name}_SIGNALNUM, {Condition_Length}, {Signal_Name}_Conditions}}"
+    # print(condition_signal_type_info_string)
+    return condition_signal_type_info_string
+    pass
+
+
+def get_signal_signal_condition_info():
+    signal_signal_condition_info_string = ''
+    Signal_Name = None
+    Signal_Type = None
+    Type_Number = 0
+    signal_info_String = ''
+    for index, row in ListDataFrame.iterrows():
+        if pd.notna(row['VariableType']) and row['VariableType'] != '':
+            Signal_Type = row['VariableType']
+            matching_type_rows = SignalDataFrame[SignalDataFrame['Type'] == Signal_Type]
+            Type_Number = len(matching_type_rows)
+            Condition_Number_Type_Info_String = get_condition_signal_type_info_string(matching_type_rows)
+            signal_signal_condition_info_string += f"static const SignalConditionInfo {Signal_Type}SignalConditionInfoArray[{Type_Number}] = {{\n{Condition_Number_Type_Info_String} \n}};\n\n"
+    # print(signal_signal_condition_info_string)
+    return signal_signal_condition_info_string
+    pass
 
 
 def write_condition_source():
-    # Condition
-    Condition_String = ''
-    Condition_Signal_String = ''
-    Signal_Condition_Number = 0
-    Signal_Name = None
-    for i, row in ConditionDataFrame.iterrows():
-        if Signal_Name is None:
-            Signal_Name = row.loc['SignalName']
-            Condition_String = ''
-        if row.loc['SignalName'] != Signal_Name:
-            Condition_Signal_String += f"const Condition {Signal_Name}_Condition [{Signal_Condition_Number}] = {{{Condition_String}}};\n"
-            Signal_Condition_Number = 0
-            Signal_Name = row.loc['SignalName']
-            Condition_String = ''
-        elif i != 0:
-            Condition_String += ','
-        Condition_String += f"{{{row.loc['ThresholdType']}, {row.loc['Threshold']}, {row.loc['Symbol']}, &{row.loc['EVT']}, {row.loc['Macro']}}}"
-        Signal_Condition_Number += 1
-        if i == len(ConditionDataFrame) - 1:
-            Condition_Signal_String += f"const Condition {Signal_Name}_Condition [{Signal_Condition_Number}] = {{{Condition_String}}};\n"
-    # print(Condition_Signal_String)
+    signal_condition_string = get_signal_condition_string()
+    signal_number_condition_info_string = get_signal_number_condition_info()
+    signal_signal_condition_info_string = get_signal_signal_condition_info()
 
-    # SignalConditionArray
-    Condition_Array_String = 'static const SignalCondition SignalConditionArray[SIGNAL_NUMBER] = {\n'
-    Signal_Name = None
-    Signal_Condition_Number = 0
-    for i, row in ConditionDataFrame.iterrows():
-        if Signal_Name is None:
-            Signal_Name = row.loc['SignalName']
-        if row.loc['SignalName'] != Signal_Name:
-            Signal_Type = SignalDataFrame.loc[SignalDataFrame['SignalName'] == Signal_Name, 'Type'].values[0]
-            Condition_Array_String += f"{{{Signal_Name}_SIGNALNUM, Type_{Signal_Type} , {Signal_Condition_Number} , &{Signal_Name}_Condition}},\n"
-            Signal_Condition_Number = 0
-            Signal_Name = row.loc['SignalName']
-        Signal_Condition_Number += 1
-        if i == len(ConditionDataFrame) - 1:
-            Signal_Type = SignalDataFrame.loc[SignalDataFrame['SignalName'] == Signal_Name, 'Type'].values[0]
-            Condition_Array_String += f"{{{Signal_Name}_SIGNALNUM, Type_{Signal_Type}, {Signal_Condition_Number} , &{Signal_Name}_Condition}}}};\n"
-
-    # TIMEOUT_ACTION_ARRAY
-    Time_Out_Action_String = 'const Condition TimeOutActionArray[TIME_FLAG_NUMBER] = {\n'
-    for i, row in TimeFlagDataFrame.iterrows():
-        if pd.notna(row.loc['FlagName']):
-            Time_Out_Action_String += f"{{1,EQ,{row.loc['FlagName']},0}},\n"
-    Time_Out_Action_String += '};\n'
-    # print(Time_Out_Action_String)
-
-    # print(Condition_Array_String)
+    if not os.path.exists('Condition'):
+        os.makedirs('Condition')
     with open(CONDITION_SOURCE_PATH, 'w') as f:
-        f.write(Condition_Source_Header_String)
-        f.write(Condition_Signal_String + '\n')
-        f.write(Condition_Array_String + '\n')
-        f.write(Time_Out_Action_String + '\n')
+        f.write('#include "EVT/Condition/Condition.h"\n\n')
+        f.write(signal_condition_string)
+        f.write(signal_number_condition_info_string)
+        f.write(signal_signal_condition_info_string)
     pass
 
 

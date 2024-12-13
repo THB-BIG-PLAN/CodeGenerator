@@ -27,8 +27,30 @@
 #define VcuGearPosn_SIGNALNUM 12
 #define VcuGearPosn_Pre_SIGNALNUM 13
 
-#define CONDITION_TYPE_NUMBER 0
-#define CONDITION_TYPE_SIGNAL 1
+
+#define BIT_SIGNAL_NUMBER 2
+#define DOUBLE_SIGNAL_NUMBER 0
+#define EEPROM_U8_SIGNAL_NUMBER 2
+#define INT16_SIGNAL_NUMBER 0
+#define INT32_SIGNAL_NUMBER 0
+#define INT64_SIGNAL_NUMBER 0
+#define INT8_SIGNAL_NUMBER 0
+#define SINGLE_SIGNAL_NUMBER 0
+#define UINT16_SIGNAL_NUMBER 0
+#define UINT32_SIGNAL_NUMBER 0
+#define UINT64_SIGNAL_NUMBER 0
+#define UINT8_SIGNAL_NUMBER 14
+
+
+#define EQ 0
+#define NEQ 1
+#define GREATER 2
+#define GREATEROREQ 3
+#define LESS 4
+#define LESSOREQ 5
+#define CHANGE 6
+#define INVALID 7
+
 
 #define BDCSEEDSIGNAL_NEQ_0 0
 #define BDCSEEDSIGNAL_CHANGE_BDCSEEDSIGNAL_PRE 1
@@ -56,64 +78,266 @@
 #define VCUGEARPOSN_PRE_EQ_2 23
 #define TIMEFLAGNUM_EQ_0 24
 
-#define EQ 0
-#define NEQ 1
-#define GREATER 2
-#define GREATEROREQ 3
-#define LESS 4
-#define LESSOREQ 5
-#define CHANGE 6
-#define INVALID 7
 
 #define LGL_SEE_350ms_TimeOut 0
 #define LGL_EEP_350ms_TimeOut 1
 #define LGL_PRM_350ms_TimeOut 2
 #define LGL_DLC_1500ms_TimeOut 3
 
-#define SIGNAL_NUMBER 18
+
 #define TIME_FLAG_NUMBER 4
 #define CONDITION_NUMBER 25
+typedef struct 
+{
+	Bit Threshold;
+	uint8 Symbol;
+	void (*EVT)();
+	uint8 ConditionIndex;
+}BitCondition;
 
-typedef struct Condition {
-    Bit Type;
-    uint8 Threshold;
-    uint8 Symbol;
-    void (*EVT)();
-    uint8 ConditionID;
-} Condition;
+typedef struct 
+{
+	double Threshold;
+	uint8 Symbol;
+	void (*EVT)();
+	uint8 ConditionIndex;
+}doubleCondition;
 
-enum SignalType {
-    Type_Bit,
-    Type_double,
-    Type_EEPROM_U8,
-    Type_int16,
-    Type_int32,
-    Type_int64,
-    Type_int8,
-    Type_single,
-    Type_uint16,
-    Type_uint32,
-    Type_uint64,
-    Type_uint8,
-};
+typedef struct 
+{
+	EEPROM_U8 Threshold;
+	uint8 Symbol;
+	void (*EVT)();
+	uint8 ConditionIndex;
+}EEPROM_U8Condition;
 
-typedef struct SignalCondition {
-    uint8 Signal;
-    enum SignalType Type;
-    uint8 Len;
-    const Condition* Condition;
-} SignalCondition;
+typedef struct 
+{
+	int16 Threshold;
+	uint8 Symbol;
+	void (*EVT)();
+	uint8 ConditionIndex;
+}int16Condition;
 
-typedef struct EVT_FLAG {
-    Bit Signal_Bit[2];
-    EEPROM_U8 Signal_EEPROM_U8[2];
-    uint8 Signal_uint8[14];
-    uint8 TimeOutFlagNum;
-    Bit TimeOutFlag[TIME_FLAG_NUMBER];
-    Bit ConditionFlag[CONDITION_NUMBER];
-} EVT_FLAG;
+typedef struct 
+{
+	int32 Threshold;
+	uint8 Symbol;
+	void (*EVT)();
+	uint8 ConditionIndex;
+}int32Condition;
 
-extern EVT_FLAG* EVT_flag;
-static const SignalCondition SignalConditionArray[SIGNAL_NUMBER];
-static const Condition TimeOutActionArray[TIME_FLAG_NUMBER];
-#endif // CONDITION_H_
+typedef struct 
+{
+	int64 Threshold;
+	uint8 Symbol;
+	void (*EVT)();
+	uint8 ConditionIndex;
+}int64Condition;
+
+typedef struct 
+{
+	int8 Threshold;
+	uint8 Symbol;
+	void (*EVT)();
+	uint8 ConditionIndex;
+}int8Condition;
+
+typedef struct 
+{
+	single Threshold;
+	uint8 Symbol;
+	void (*EVT)();
+	uint8 ConditionIndex;
+}singleCondition;
+
+typedef struct 
+{
+	uint16 Threshold;
+	uint8 Symbol;
+	void (*EVT)();
+	uint8 ConditionIndex;
+}uint16Condition;
+
+typedef struct 
+{
+	uint32 Threshold;
+	uint8 Symbol;
+	void (*EVT)();
+	uint8 ConditionIndex;
+}uint32Condition;
+
+typedef struct 
+{
+	uint64 Threshold;
+	uint8 Symbol;
+	void (*EVT)();
+	uint8 ConditionIndex;
+}uint64Condition;
+
+typedef struct 
+{
+	uint8 Threshold;
+	uint8 Symbol;
+	void (*EVT)();
+	uint8 ConditionIndex;
+}uint8Condition;
+
+typedef struct 
+{
+	uint8 SignalIndex;
+	uint8 Symbol;
+	void (*EVT)();
+	uint8 ConditionIndex;
+}SignalCondition;
+
+typedef struct 
+{
+	Bit Threshold;
+	uint8 Symbol;
+	void (*EVT)();
+	uint8 ConditionIndex;
+}TimeOutCondition;
+
+typedef struct 
+{
+	uint8 SignalIndex;
+	uint8 length;
+	BitCondition *Conditions;
+}BitSignalConditionInfo;
+
+typedef struct 
+{
+	uint8 SignalIndex;
+	uint8 length;
+	doubleCondition *Conditions;
+}doubleSignalConditionInfo;
+
+typedef struct 
+{
+	uint8 SignalIndex;
+	uint8 length;
+	EEPROM_U8Condition *Conditions;
+}EEPROM_U8SignalConditionInfo;
+
+typedef struct 
+{
+	uint8 SignalIndex;
+	uint8 length;
+	int16Condition *Conditions;
+}int16SignalConditionInfo;
+
+typedef struct 
+{
+	uint8 SignalIndex;
+	uint8 length;
+	int32Condition *Conditions;
+}int32SignalConditionInfo;
+
+typedef struct 
+{
+	uint8 SignalIndex;
+	uint8 length;
+	int64Condition *Conditions;
+}int64SignalConditionInfo;
+
+typedef struct 
+{
+	uint8 SignalIndex;
+	uint8 length;
+	int8Condition *Conditions;
+}int8SignalConditionInfo;
+
+typedef struct 
+{
+	uint8 SignalIndex;
+	uint8 length;
+	singleCondition *Conditions;
+}singleSignalConditionInfo;
+
+typedef struct 
+{
+	uint8 SignalIndex;
+	uint8 length;
+	uint16Condition *Conditions;
+}uint16SignalConditionInfo;
+
+typedef struct 
+{
+	uint8 SignalIndex;
+	uint8 length;
+	uint32Condition *Conditions;
+}uint32SignalConditionInfo;
+
+typedef struct 
+{
+	uint8 SignalIndex;
+	uint8 length;
+	uint64Condition *Conditions;
+}uint64SignalConditionInfo;
+
+typedef struct 
+{
+	uint8 SignalIndex;
+	uint8 length;
+	uint8Condition *Conditions;
+}uint8SignalConditionInfo;
+
+typedef struct 
+{
+	uint8 SignalIndex;
+	uint8 length;
+	SignalCondition *Conditions;
+}SignalConditionInfo;
+
+typedef struct 
+{
+	Bit Signal_Bit[BIT_SIGNAL_NUMBER];
+	double Signal_double[DOUBLE_SIGNAL_NUMBER];
+	EEPROM_U8 Signal_EEPROM_U8[EEPROM_U8_SIGNAL_NUMBER];
+	int16 Signal_int16[INT16_SIGNAL_NUMBER];
+	int32 Signal_int32[INT32_SIGNAL_NUMBER];
+	int64 Signal_int64[INT64_SIGNAL_NUMBER];
+	int8 Signal_int8[INT8_SIGNAL_NUMBER];
+	single Signal_single[SINGLE_SIGNAL_NUMBER];
+	uint16 Signal_uint16[UINT16_SIGNAL_NUMBER];
+	uint32 Signal_uint32[UINT32_SIGNAL_NUMBER];
+	uint64 Signal_uint64[UINT64_SIGNAL_NUMBER];
+	uint8 Signal_uint8[UINT8_SIGNAL_NUMBER];
+
+	uint8 TimeOutFlagNum;
+	Bit TimeOutFlag[TIME_FLAG_NUMBER];
+	Bit ConditionFlag[CONDITION_NUMBER];
+}SignalsAndConditions;
+
+static const BitSignalConditionInfo BitConditionInfoArray[BIT_SIGNAL_NUMBER];
+static const doubleSignalConditionInfo doubleConditionInfoArray[DOUBLE_SIGNAL_NUMBER];
+static const EEPROM_U8SignalConditionInfo EEPROM_U8ConditionInfoArray[EEPROM_U8_SIGNAL_NUMBER];
+static const int16SignalConditionInfo int16ConditionInfoArray[INT16_SIGNAL_NUMBER];
+static const int32SignalConditionInfo int32ConditionInfoArray[INT32_SIGNAL_NUMBER];
+static const int64SignalConditionInfo int64ConditionInfoArray[INT64_SIGNAL_NUMBER];
+static const int8SignalConditionInfo int8ConditionInfoArray[INT8_SIGNAL_NUMBER];
+static const singleSignalConditionInfo singleConditionInfoArray[SINGLE_SIGNAL_NUMBER];
+static const uint16SignalConditionInfo uint16ConditionInfoArray[UINT16_SIGNAL_NUMBER];
+static const uint32SignalConditionInfo uint32ConditionInfoArray[UINT32_SIGNAL_NUMBER];
+static const uint64SignalConditionInfo uint64ConditionInfoArray[UINT64_SIGNAL_NUMBER];
+static const uint8SignalConditionInfo uint8ConditionInfoArray[UINT8_SIGNAL_NUMBER];
+
+
+static const SignalConditionInfo BitSignalConditionInfoArray[BIT_SIGNAL_NUMBER];
+static const SignalConditionInfo doubleSignalConditionInfoArray[DOUBLE_SIGNAL_NUMBER];
+static const SignalConditionInfo EEPROM_U8SignalConditionInfoArray[EEPROM_U8_SIGNAL_NUMBER];
+static const SignalConditionInfo int16SignalConditionInfoArray[INT16_SIGNAL_NUMBER];
+static const SignalConditionInfo int32SignalConditionInfoArray[INT32_SIGNAL_NUMBER];
+static const SignalConditionInfo int64SignalConditionInfoArray[INT64_SIGNAL_NUMBER];
+static const SignalConditionInfo int8SignalConditionInfoArray[INT8_SIGNAL_NUMBER];
+static const SignalConditionInfo singleSignalConditionInfoArray[SINGLE_SIGNAL_NUMBER];
+static const SignalConditionInfo uint16SignalConditionInfoArray[UINT16_SIGNAL_NUMBER];
+static const SignalConditionInfo uint32SignalConditionInfoArray[UINT32_SIGNAL_NUMBER];
+static const SignalConditionInfo uint64SignalConditionInfoArray[UINT64_SIGNAL_NUMBER];
+static const SignalConditionInfo uint8SignalConditionInfoArray[UINT8_SIGNAL_NUMBER];
+
+
+static const TimeOutCondition TimeOutActionArray[TIME_FLAG_NUMBER];
+extern SignalsAndConditions *P_SignalsAndConditions;
+#endif

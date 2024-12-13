@@ -63,9 +63,9 @@ def get_condition_String(row):
         if pd.isnull(row.iloc[i]):
             break
         if i == 3:
-            Condition_String += f"EVT_flag->ConditionFlag[{row.iloc[i]}]"
+            Condition_String += f"P_SignalsAndConditions->ConditionFlag[{row.iloc[i]}]"
         else:
-            Condition_String += f" && \n        EVT_flag->ConditionFlag[{row.iloc[i]}]"
+            Condition_String += f" && \n        P_SignalsAndConditions->ConditionFlag[{row.iloc[i]}]"
     Condition_String += ')\n'
     # print(Condition_String)
     return Condition_String
