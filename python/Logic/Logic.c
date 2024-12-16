@@ -1,28 +1,4 @@
-import os
 
-import pandas as pd
-import re
-import warnings
-import Exception
-
-warnings.simplefilter(action='ignore', category=UserWarning)
-CONFIG_PATH = 'Config.xlsx'
-LOGIC_HEADER_PATH = 'Logic/Logic.h'
-LOGIC_SOURCE_PATH = 'Logic/Logic.c'
-InputSignal_DataFrame = pd.read_excel(CONFIG_PATH, sheet_name='InputSignal')
-OutputInitializer_DataFrame = pd.read_excel(CONFIG_PATH, sheet_name='OutputInitializer')
-Logic_Header_Header = '''
-#ifndef EVT_EVENT_LOGIC_H_
-#define EVT_EVENT_LOGIC_H_
-
-
-
-extern void Condition_Init();
-extern void Condition_Step();
-
-#endif /* EVT_EVENT_LOGIC_H_ */
-'''
-Logic_Source_Header = '''
 #pragma GCC push_options
 #pragma GCC optimize ("O0")
 
@@ -75,60 +51,32 @@ void Condition_Init()
 	memset(P_SignalsAndConditions, 0, sizeof(SignalsAndConditions));
 	SignalInit();
 }
-'''
 
+void SignalInit()
+{
+	Set_EEPROM_U8_output1(5);
+	Set_uint8_output2(3);
+	Set_uint16_output3(16);
+	Set_single_output4(5.4);
+	Set_Bit_output5(false);
+	Set_double_output6(10233333);
+	Set_t_output7(45);
 
-def write_logic_header():
-    if not os.path.exists('Logic'):
-        os.makedirs('Logic')
-    with open(LOGIC_HEADER_PATH, 'w') as f:
-        f.write(Logic_Header_Header)
+}
 
+void SignalUpdate()
+{
+	P_SignalsAndConditions->Signal_Bit[PPL_boolPosnLampSts_SIGNALNUM] = Get_Bit_PPL_boolPosnLampSts();
+	P_SignalsAndConditions->Signal_EEPROM_U8[EEP_LOGO_ENABLE_FLAG_SIGNALNUM] = Get_EEPROM_U8_EEP_LOGO_ENABLE_FLAG();
+	P_SignalsAndConditions->Signal_uint8[BdcSeedsignal_SIGNALNUM] = Get_uint8_BdcSeedsignal();
+	P_SignalsAndConditions->Signal_uint8[BdcWlcmsignal_SIGNALNUM] = Get_uint8_BdcWlcmsignal();
+	P_SignalsAndConditions->Signal_uint8[DLC_u8TurnLightTwice_SIGNALNUM] = Get_uint8_DLC_u8TurnLightTwice();
+	P_SignalsAndConditions->Signal_uint8[EspAutoHoldActvSts_SIGNALNUM] = Get_uint8_EspAutoHoldActvSts();
+	P_SignalsAndConditions->Signal_uint8[PLB_u8LBSts_SIGNALNUM] = Get_uint8_PLB_u8LBSts();
+	P_SignalsAndConditions->Signal_uint8[PRM_u8PowerSts_SIGNALNUM] = Get_uint8_PRM_u8PowerSts();
+	P_SignalsAndConditions->Signal_uint8[VcuGearPosn_SIGNALNUM] = Get_uint8_VcuGearPosn();
+}
 
-def get_signal_update_string():
-    Signal_Update_String = ''
-    for index, row in InputSignal_DataFrame.iterrows():
-        Signal_Name = row.loc['SignalName']
-        Signal_Type = row.loc['Type']
-        if not Signal_Name.endswith('_Pre'):
-            Signal_Update_String += f"\tP_SignalsAndConditions->Signal_{Signal_Type}[{Signal_Name}_SIGNALNUM] = Get_{Signal_Type}_{Signal_Name}();\n"
-    # print(Signal_Update_String)
-
-    return Signal_Update_String
-    pass
-
-
-def get_output_init_string():
-    Output_Init_String = ''
-    for index, row in OutputInitializer_DataFrame.iterrows():
-        Output_Init_String += f"\tSet_{row.loc['Type']}_{row.loc['SignalName']}({row.loc['Value']});\n"
-    # print(Output_Init_String)
-    return Output_Init_String
-    pass
-
-
-def write_logic_source_header():
-    with open(LOGIC_SOURCE_PATH, 'w') as f:
-        f.write(Logic_Source_Header)
-    pass
-
-
-def write_logic_source_Signal_Init():
-    Output_Init_String = get_output_init_string()
-    with open(LOGIC_SOURCE_PATH, 'a') as f:
-        f.write(f"\nvoid SignalInit()\n{{\n{Output_Init_String}\n}}\n")
-    pass
-
-
-def write_logic_signal_update():
-    Signal_Update_String = get_signal_update_string()
-    with open(LOGIC_SOURCE_PATH, 'a') as f:
-        f.write(f"\nvoid SignalUpdate()\n{{\n{Signal_Update_String}}}\n")
-    pass
-
-
-def write_logic_function():
-    Logic_Function_String = '''
     
 void Condition_Step()
 {
@@ -1134,25 +1082,3 @@ void TimeOut_Condition_Judge(uint8 SignalIndex)
 	}
 }
 
-'''
-    with open(LOGIC_SOURCE_PATH, 'a') as f:
-        f.write(Logic_Function_String)
-    pass
-
-
-def write_logic_source():
-    write_logic_source_header()
-    write_logic_source_Signal_Init()
-    write_logic_signal_update()
-    write_logic_function()
-    pass
-
-
-def main():
-    write_logic_header()
-    write_logic_source()
-    pass
-
-
-if __name__ == '__main__':
-    main()
