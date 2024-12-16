@@ -1,73 +1,80 @@
+import numpy as np
 import pandas as pd
 import warnings
-import itertools
+from itertools import product
 
 # 忽略警告
 warnings.simplefilter(action='ignore', category=UserWarning)
 
-CONFIG_PATH = 'ConfigByHand.xlsx'
+CONFIG_PATH = 'Config.xlsx'
 
 
-def read_data(config_path, sheet_index):
-    """读取Excel数据"""
-    return pd.read_excel(config_path, sheet_name=sheet_index)
+def read_config():
+    df = pd.read_excel(CONFIG_PATH, sheet_name='Condition')
+    return df
 
 
-def extract_signal_names(df):
-    """提取信号名称"""
-    Signal_Name_list = []
-    for i, row in df.iterrows():
-        if i == 0:
-            Signal_Name_list.append(row.iloc[0])
-        elif df.iloc[i - 1, 0] != df.iloc[i, 0]:
-            Signal_Name_list.append(df.iloc[i, 0])
-    return Signal_Name_list
+def get_signal_name_list(df):
+    signal_name_list = []
+    SignalName = None
+    for index, row in df.iterrows():
+        if row.loc['SignalName'].endswith('Pre'):
+            continue
+        if SignalName is None:
+            SignalName = row.loc['SignalName']
+            signal_name_list.append(SignalName)
+        if row.loc['SignalName'] != SignalName:
+            signal_name_list.append(row.loc['SignalName'])
+            SignalName = row.loc['SignalName']
+        if index == len(df) - 1:
+            signal_name_list.append(row.loc['SignalName'])
+
+    # print(signal_name_list)
+    return signal_name_list
+    pass
 
 
 def extract_signals(df):
-    """提取信号集"""
-    Signal_list = []
-    Current_SignalSet = set()
-
-    for i, row in df.iterrows():
-        if i == 0:
-            Current_SignalSet = set()
+    signal_list = []
+    current_signal_set = set()
+    for index, row in df.iterrows():
+        if row.loc['SignalName'].endswith('Pre'):
+            continue
+        if index == 0:
+            current_signal_set = set()
         else:
-            if df.iloc[i - 1, 0] != df.iloc[i, 0]:
-                Signal_list.append(Current_SignalSet)
-                Current_SignalSet = set()
-        if row.iloc[2] == 0:  # 阈值为0就取0，1
-            Current_SignalSet.update({0, 1})
-        elif row.iloc[2] == '0xff':  # 阈值为255就取254，255
-            Current_SignalSet.update({254, 255})
-        else:  # 阈值大于0小于255就取阈值的左右边界
-            if str(row.iloc[2]).isdigit():
-                Current_SignalSet.update({row.iloc[2] - 1, row.iloc[2], row.iloc[2] + 1})
-
-    Signal_list.append(Current_SignalSet)
-    return Signal_list
+            if df.iloc[index - 1, 0] != df.iloc[index, 0]:
+                signal_list.append(current_signal_set)
+                current_signal_set = set()
+        threshold_value = pd.to_numeric(row.loc['Threshold'], errors='coerce')
+        if not np.isnan(threshold_value):
+            if threshold_value == 0:
+                current_signal_set.update({0, 1, 2})
+            elif threshold_value == 0xff:
+                current_signal_set.update({255, 254})
+            else:
+                current_signal_set.update({int(threshold_value - 1), int(threshold_value), int(threshold_value + 1)})
+        elif not current_signal_set:
+            current_signal_set.update({255, 254})
+    signal_list.append(current_signal_set)
+    print(signal_list)
+    return signal_list
+    pass
 
 
 def compute_cartesian_product(signal_list):
-    """计算笛卡尔积"""
-    return list(itertools.product(*signal_list))
-
-
-def save_to_excel(answer_list, signal_name_list, file_name, sheet_name):
-    """保存结果到Excel"""
-    df = pd.DataFrame(answer_list, columns=signal_name_list)
-    df.to_excel(file_name, sheet_name=sheet_name, index=False)
-    print("Cartesian Product saved to Excel successfully!")
-    print("Press Enter to Continue...")
-    input()
+    cartesian_product_result = list(product(*signal_list))
+    return cartesian_product_result
 
 
 def main():
-    df = read_data(CONFIG_PATH, 2)
-    signal_name_list = extract_signal_names(df)
+    df = read_config()
+    signal_name_list = get_signal_name_list(df)
     signal_list = extract_signals(df)
     answer_list = compute_cartesian_product(signal_list)
-    save_to_excel(answer_list, signal_name_list, "CartesianProduct.xlsx", "CartesianProduct")
+    df_answer = pd.DataFrame(answer_list, columns=signal_name_list)
+    df_answer.to_excel('CartesianProduct.xlsx', index=False)
+    pass
 
 
 if __name__ == '__main__':
