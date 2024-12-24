@@ -3,361 +3,303 @@ from enum import Enum
 import warnings
 import re
 
-
-def main():
-    warnings.simplefilter(action='ignore', category=UserWarning)
-    CONFIG_FILE = "ConfigByHand.xlsx"
-    WRITE_FILE = "requirement_verifier.py"
-    ActionDataFrame = pd.read_excel(CONFIG_FILE, sheet_name="Action")
-    SignalDataFrame = pd.read_excel(CONFIG_FILE, sheet_name=0)
-    RequirementVerifierFile = open(WRITE_FILE, "w")
-    HEADER = '''
-# -*- coding: gbk -*-
-import pandas as pd
-from enum import Enum
-import warnings
-import openpyxl
-import re
 warnings.simplefilter(action='ignore', category=UserWarning)
-from openpyxl import Workbook
-ResultList = []
-ErrorList = []
-Result = pd.DataFrame(columns=['''
+InputSignal = pd.read_excel('ConfigByHand.xlsx', sheet_name='InputSignal')
+signal_num = len(InputSignal) + 1
+Action = pd.read_excel('ConfigByHand.xlsx', sheet_name='Action')
+List = pd.read_excel('Config.xlsx', sheet_name='List')
+Condition = pd.read_excel('Config.xlsx', sheet_name='Condition')
+Event = pd.read_excel('Config.xlsx', sheet_name='EVT')
 
-    for i, row in SignalDataFrame.iterrows():
-        HEADER += f"'{row.iloc[0]}', "
+def get_action_status_String():
+    action_status_String = ''
+    for index, row in Action.iterrows():
+        if pd.notna(row.loc['Group']):
+            len_row = len(row)
+            for i in range(2, len_row):
+                if pd.notna(row.iloc[i]):
+                    action_status_String += f"{row.iloc[i]} = '{row.iloc[i]}'\n"
+    return action_status_String
 
-    HEADER += "'TIMEFLAGNUM', 'Action'])\n"
+    pass
 
-    RequirementVerifierFile.write(HEADER)
-    ActionGroup = None
-    ActionNumber = 0
-    for i, row in ActionDataFrame.iterrows():
-        if pd.notna(row.iloc[0]) and ActionGroup == row.iloc[0]:
-            ActionString = re.sub(r'\(\)$', '', row.iloc[1])
-            RequirementVerifierFile.write(f'    {ActionString} = {ActionNumber}\n')
-            ActionNumber += 1
-        if pd.notna(row.iloc[0]) and ActionGroup is None:
-            RequirementVerifierFile.write(f'class Action{int(row.iloc[0])}(Enum):\n')
-            ActionGroup = row.iloc[0]
-            ActionString = re.sub(r'\(\)$', '', row.iloc[1])
-            RequirementVerifierFile.write(f'    {ActionString} = {ActionNumber}\n')
-            ActionNumber += 1
-        if pd.notna(row.iloc[0]) and ActionGroup != row.iloc[0]:
-            RequirementVerifierFile.write(f'class Action{int(row.iloc[0])}(Enum):\n')
-            ActionGroup = row.iloc[0]
-            ActionString = re.sub(r'\(\)$', '', row.iloc[1])
-            RequirementVerifierFile.write(f'    {ActionString} = {ActionNumber}\n')
-            ActionNumber += 1
 
-    SignalString = ''  # SignalString = 'Signal1, Signal2, Signal3'
-    StateString = ''  # StateString = "'Signal1' :Signal1, 'Signal2' :Signal2, 'Signal3' :Signal3"
-    EventDataFrame = pd.read_excel(CONFIG_FILE, sheet_name=4)
-    ConditionDataFrame = pd.read_excel(CONFIG_FILE, sheet_name=2)
-    rownum = 3
-    SignalNumber = len(SignalDataFrame)
-    for i, row in SignalDataFrame.iterrows():
-        if i != 0 and i % rownum == 0:
-            SignalString += '\n                '
-            StateString += '\n                '
-        SignalString += (f'{row.iloc[0]}' + (', ' if i != len(SignalDataFrame) - 1 else ''))
-        StateString += (f"'{row.iloc[0]}': {row.iloc[0]}" + ', ')
-    StateString += "'TIMEFLAGNUM': 0"
-    RequirementVerifierFile.write(f'''
-class State:
-    def __init__(self, {SignalString}):
-        self.current_state = {{{StateString}}}
-        self.previous_state = {{k: 0 for k in self.current_state.keys()}}
-''')
+def get_resultDataFrame_String():
+    resultDataFrame_String = ''
+    signal_string = ''
+    row_number = 0
+    for index, row in InputSignal.iterrows():
+        signal_string += f"'{row.loc['SignalName']}', "
+        row_number += 1
+        if row_number == 3:
+            signal_string += '\n'
+            row_number = 0
+    resultDataFrame_String += f"resultDataFrame = pd.DataFrame(columns=[{signal_string}'result'])\n"
+    # print(resultDataFrame_String)
+    return resultDataFrame_String
+    pass
 
-    # 条件宏清零
-    ConditionMacroDataFrame = pd.read_excel(CONFIG_FILE, sheet_name=5)
-    ConditionMacroString = ''
-    for i, row in ConditionMacroDataFrame.iterrows():
-        ConditionMacroString += f'        self.{row.iloc[0]} = 0 \n'
-    RequirementVerifierFile.write(ConditionMacroString)
-    RequirementVerifierFile.write('\n')
-    # 条件宏赋值
-    ConditionString = ''
-    for i, row in ConditionDataFrame.iterrows():
-        ConditionString += f'        if '
-        if row.iloc[1] == 'EQ':
-            if row.iloc[3] == 'CONDITION_TYPE_NUMBER':
-                ConditionString += f"self.current_state['{row.iloc[0]}'] == {row.iloc[2]}:\n"
-                ConditionString += f'            self.{row.iloc[5]} = 1\n'
+
+def get_header_String():
+    action_status_String = get_action_status_String()
+    resultDataFrame_String = get_resultDataFrame_String()
+    header_String = f"import pandas as pd\n\n\n{action_status_String}\n{resultDataFrame_String}"
+    # print(header_String)
+    return header_String
+    pass
+
+
+def get_init_function_signal_string():
+    signal_string = ''
+    for index, row in InputSignal.iterrows():
+        signal_string += f"'{row.loc['SignalName']}', "
+    signal_string += "'TIMEFLAGNUM'"
+    # print(signal_string)
+    return signal_string
+    pass
+
+
+def get_init_function_Macro_string():
+    init_macro_string = ''
+    for index, row in List.iterrows():
+        if pd.notna(row.loc['ConditionMacro']):
+            init_macro_string += f"\t\tself.{row.loc['ConditionMacro']} = None\n"
+    # print(init_macro_string)
+    return init_macro_string
+    pass
+
+
+def get_init_function_Action_String():
+    init_Action_String = ''
+    for index, row in Action.iterrows():
+        if pd.notna(row.loc['Group']):
+            action_name = re.sub(r'\(.*?\)', '', row.loc['ActionName'])
+            init_Action_String += f"\t\tself.{action_name}_Set = set()\n"
+    # print(init_Action_String)
+    return init_Action_String
+
+
+def get_Class_State_init_function_String():
+    init_function_signal_string = get_init_function_signal_string()
+    init_function_Macro_string = get_init_function_Macro_string()
+    Check_Action_String = get_init_function_Action_String()
+    class_state_init_function_String = (f"\tdef __init__(self, states_tuple):\n"
+                                        f"\t\tkeys = [{init_function_signal_string}]\n"
+                                        f"{init_function_Macro_string}\n"
+                                        f"{Check_Action_String}\n"
+                                        f"\t\tself.current_state = {{key: None for key in keys}}\n"
+                                        f"\t\tself.previous_state = {{key: None for key in keys}}\n"
+                                        f"\t\tself.update_state(states_tuple)\n")
+    # print(class_state_init_function_String)
+    return class_state_init_function_String
+    pass
+
+
+def get_update_function_update_signal_string():
+    update_signal_string = '\t\t('
+    row_number = 0
+    for index, row in InputSignal.iterrows():
+        update_signal_string += f"self.current_state['{row.loc['SignalName']}']"
+        if index < len(InputSignal) - 1:
+            update_signal_string += ', '
+        row_number += 1
+        if row_number == 3:
+            update_signal_string += '\n\t\t '
+            row_number = 0
+    update_signal_string += ") = states_tuple[:9]\n"
+    # print(update_signal_string)
+    return update_signal_string
+    pass
+
+
+def get_Class_State_update_function_String():
+    update_function_update_signal_string = get_update_function_update_signal_string()
+    Check_Action_String = get_init_function_Action_String()
+    class_state_update_function_String = (f"\tdef update_state(self, states_tuple):\n"
+                                          f"\t\tfor k in self.current_state.keys():\n"
+                                          f"\t\t\tself.previous_state[k] = self.current_state[k]\n"
+                                          f"{update_function_update_signal_string}\n"
+                                          f"\t\tself.current_state['TIMEFLAGNUM'] = 0\n"
+                                          f"\t\tself.calculate_flags()\n"
+                                          f"{Check_Action_String}")
+    # print(class_state_update_function_String)
+    return class_state_update_function_String
+    pass
+
+
+def get_calculate_function_condition_string():
+    calculate_condition_string = ''
+    for index, row in Condition.iterrows():
+        calculate_condition_string += f"\t\tself.{row.loc['Macro']} = 1 if self."
+        if re.search(r'_Pre$', row.loc['SignalName']):
+            signal_name = re.sub(r'_Pre$', '', row.loc['SignalName'])
+            calculate_condition_string += f"previous_state['{signal_name}']"
+        else:
+            calculate_condition_string += f"current_state['{row.loc['SignalName']}'] "
+        if row.loc['Symbol'] == 'EQ':
+            calculate_condition_string += f"== "
+        elif row.loc['Symbol'] == 'NEQ' or row.loc['Symbol'] == 'CHANGE':
+            calculate_condition_string += f"!= "
+        elif row.loc['Symbol'] == 'GREATER':
+            calculate_condition_string += f"> "
+        elif row.loc['Symbol'] == 'LESS':
+            calculate_condition_string += f"< "
+        elif row.loc['Symbol'] == 'GREATEROREQ':
+            calculate_condition_string += f">= "
+        elif row.loc['Symbol'] == 'LESSOREQ':
+            calculate_condition_string += f"<= "
+        if re.search(r'_SIGNALNUM$', str(row.loc['Threshold'])):
+            signal_name = re.sub(r'_SIGNALNUM$', '', row.loc['Threshold'])
+            if re.search(r'_Pre$', signal_name):
+                signal_name = re.sub(r'_Pre$', '', signal_name)
+                calculate_condition_string += f"self.previous_state['{signal_name}']"
             else:
-                ThresholdSignal = re.sub(r'_SIGNALNUM$', '', row.iloc[2])
-                ConditionString += f"self.current_state['{row.iloc[0]}'] == self.current_state['{ThresholdSignal}']:\n"
-                ConditionString += f"            self.{row.iloc[5]} = 1\n"
-        elif row.iloc[1] == 'NEQ':
-            if row.iloc[3] == 'CONDITION_TYPE_NUMBER':
-                ConditionString += f"self.current_state['{row.iloc[0]}'] != {row.iloc[2]}:\n"
-                ConditionString += f'            self.{row.iloc[5]} = 1\n'
-            else:
-                ThresholdSignal = re.sub(r'_SIGNALNUM$', '', row.iloc[2])
-                ConditionString += f"self.current_state['{row.iloc[0]}'] != self.current_state['{ThresholdSignal}']:\n"
-                ConditionString += f"            self.{row.iloc[5]} = 1\n"
-        elif row.iloc[1] == 'GREATER':
-            if row.iloc[3] == 'CONDITION_TYPE_NUMBER':
-                ConditionString += f"self.current_state['{row.iloc[0]}'] > {row.iloc[2]}:\n"
-                ConditionString += f'            self.{row.iloc[5]} = 1\n'
-            else:
-                ThresholdSignal = re.sub(r'_SIGNALNUM$', '', row.iloc[2])
-                ConditionString += f"self.current_state['{row.iloc[0]}'] > self.current_state['{ThresholdSignal}']:\n"
-                ConditionString += f"            self.{row.iloc[5]} = 1\n"
-        elif row.iloc[1] == 'GREATEROREQ':
-            if row.iloc[3] == 'CONDITION_TYPE_NUMBER':
-                ConditionString += f"self.current_state['{row.iloc[0]}'] >= {row.iloc[2]}:\n"
-                ConditionString += f'            self.{row.iloc[5]} = 1\n'
-            else:
-                ThresholdSignal = re.sub(r'_SIGNALNUM$', '', row.iloc[2])
-                ConditionString += f"self.current_state['{row.iloc[0]}'] >= self.current_state['{ThresholdSignal}']:\n"
-                ConditionString += f"            self.{row.iloc[5]} = 1\n"
-        elif row.iloc[1] == 'LESS':
-            if row.iloc[3] == 'CONDITION_TYPE_NUMBER':
-                ConditionString += f"self.current_state['{row.iloc[0]}'] < {row.iloc[2]}:\n"
-                ConditionString += f'            self.{row.iloc[5]} = 1\n'
-            else:
-                ThresholdSignal = re.sub(r'_SIGNALNUM$', '', row.iloc[2])
-                ConditionString += f"self.current_state['{row.iloc[0]}'] < self.current_state['{ThresholdSignal}']:\n"
-                ConditionString += f"            self.{row.iloc[5]} = 1\n"
-        elif row.iloc[1] == 'LESSOREQ':
-            if row.iloc[3] == 'CONDITION_TYPE_NUMBER':
-                ConditionString += f"self.current_state['{row.iloc[0]}'] <= {row.iloc[2]}:\n"
-                ConditionString += f'            self.{row.iloc[5]} = 1\n'
-            else:
-                ThresholdSignal = re.sub(r'_SIGNALNUM$', '', row.iloc[2])
-                ConditionString += f"self.current_state['{row.iloc[0]}'] <= self.current_state['{ThresholdSignal}']:\n"
-                ConditionString += f"            self.{row.iloc[5]} = 1\n"
-        elif row.iloc[1] == 'CHANGE':
-            ConditionString += f"self.current_state['{row.iloc[0]}'] != self.previous_state['{row.iloc[0]}']:\n"
-            ConditionString += f'            self.{row.iloc[5]} = 1\n'
-        elif row.iloc[1] == 'CHANGETO':
-            if row.iloc[3] == 'CONDITION_TYPE_NUMBER':
-                ConditionString += f"self.current_state['{row.iloc[0]}'] != self.previous_state['{row.iloc[0]}'] and self.current_state['{row.iloc[0]}'] == {row.iloc[2]}:\n"
-                ConditionString += f'            self.{row.iloc[5]} = 1\n'
-            else:
-                ThresholdSignal = re.sub(r'_SIGNALNUM$', '', row.iloc[2])
-                ConditionString += f"self.current_state['{row.iloc[0]}] != self.previous_state['{row.iloc[0]}'] and self.current_state['{row.iloc[0]}'] == self.current_state['{ThresholdSignal}']:\n"
-                ConditionString += f"        self.{row.iloc[5]} = 1\n"
-    RequirementVerifierFile.write(ConditionString)
-    RequirementVerifierFile.write('\n')
+                calculate_condition_string += f"self.current_state['{signal_name}']"
+        else:
+            calculate_condition_string += f"{row.loc['Threshold']}"
+        calculate_condition_string += " else 0\n"
+    # print(calculate_condition_string)
+    return calculate_condition_string
 
-    # 增加是否有TIMEFLAGNUM的判断
-    AddTimeString = ''
-    for i, row in EventDataFrame.iterrows():
-        if (pd.notna(row.iloc[1]) and re.search('addTimer', row.iloc[1]) is not None) or (
-                pd.notna(row.iloc[2]) and re.search('addTimer', str(row.iloc[2])) is not None):
-            row_value = row.iloc[0]
-            ConditionList = ConditionDataFrame[
-                ConditionDataFrame.iloc[:, 4].astype(str) == str(row_value)].index.tolist()
-            AddTimeString += f'        if('
-            for j in range(len(ConditionList)):
-                AddTimeString += f"(self.{ConditionDataFrame.iloc[ConditionList[j], 5]} == 1)"
-                if j != len(ConditionList) - 1:
-                    AddTimeString += ' or '
-            AddTimeString += f') '
-            if pd.notna(row.iloc[3]):
-                AddTimeString += 'and ('
-                for k in range(3, len(row)):
-                    if pd.notna(row.iloc[k]):
-                        AddTimeString += f"(self.{row.iloc[k]} == 1)"
-                        if k != len(row) - 1 and pd.notna(row.iloc[k + 1]):
-                            AddTimeString += 'and '
-                AddTimeString += '):\n '
-                AddTimeString += f'            self.current_state["TIMEFLAGNUM"] += 1\n'
-    AddTimeString += '        if self.current_state["TIMEFLAGNUM"] == 0:\n            self.TIMEFLAGNUM_EQ_0 = 1 \n'
-    RequirementVerifierFile.write(AddTimeString)
-
-    ActionConflictString = ''
-    ActionGroup = None
-    for i, row in ActionDataFrame.iterrows():
-        if pd.notna(row.iloc[0]) and ActionGroup == row.iloc[0]:
-            ActionName = re.sub(r"\(\)$", "", row.iloc[1])
-            ActionConflictString += f' and Action{int(row.iloc[0])}.{ActionName} in actions'
-        if pd.notna(row.iloc[0]) and ActionGroup is None:
-            ActionName = re.sub(r"\(\)$", "", row.iloc[1])
-            ActionGroup = row.iloc[0]
-            ActionConflictString += f'(Action{int(row.iloc[0])}.{ActionName} in actions'
-        if pd.notna(row.iloc[0]) and ActionGroup != row.iloc[0]:
-            ActionName = re.sub(r"\(\)$", "", row.iloc[1])
-            ActionGroup = row.iloc[0]
-            ActionConflictString += f') or (Action{int(row.iloc[0])}.{ActionName} in actions'
-    ActionConflictString += ')\n'
-
-    SignalInitString = ''.join(map(str, (lambda: ["0, " for _ in range(SignalNumber - 1)] + [0])()))
-    RequirementVerifierFile.write(f'''
-
-    def update_state(self,{SignalString}):
-        self.previous_state = self.current_state.copy()
-        self.current_state = {{{StateString}}}
-
-{ConditionMacroString}
-
-{ConditionString}
-
-{AddTimeString}
-    def get_current(self, param):
-        """获取当前状态值"""
-        return self.current_state.get(param)
-
-    def get_previous(self, param):
-        """获取前态状态值"""
-        return self.previous_state.get(param)
+    pass
 
 
+def get_timeflag_condition_string(row):
+    timeflag_condition_string = ''
+    for index in range(3, len(row)):
+        if pd.notna(row.iloc[index]):
+            if index > 3:
+                timeflag_condition_string += " and "
+            timeflag_condition_string += f"self.{row.iloc[index]}"
+    # print(timeflag_condition_string)
+    return timeflag_condition_string
+    pass
 
+
+def get_calculate_function_timeflag_string():
+    timeflag_update_string = ''
+    for index, row in Event.iterrows():
+        for i in range(1, 3):
+            if pd.notna(row.iloc[i]) and re.search(r'addTimer', str(row.iloc[i])):
+                timeflag_update_string += (f"\t\tif {get_timeflag_condition_string(row)}:\n"
+                                           f"\t\t\tself.current_state['TIMEFLAGNUM'] += 1\n")
+    # print(timeflag_update_string)
+    timeflag_update_string += f"\t\tself.TIMEFLAGNUM_EQ_0 = 1 if self.current_state['TIMEFLAGNUM'] == 0 else 0\n"
+    return timeflag_update_string
+    pass
+
+
+def get_calculate_flags_function_String():
+    condition_update_string = get_calculate_function_condition_string()
+    timeflag_update_string = get_calculate_function_timeflag_string()
+    calculate_flags_function_String = (f"\tdef calculate_flags(self):\n"
+                                       f"{condition_update_string}\n"
+                                       f"{timeflag_update_string}")
+    # print(calculate_flags_function_String)
+    return calculate_flags_function_String
+    pass
+
+
+def get_get_current_state_function_String():
+    get_current_state_function_String = ("\tdef get_current_state(self, param):\n"
+                                         "\t\treturn self.current_state.get(param)\n")
+    return get_current_state_function_String
+    pass
+
+
+def get_get_previous_state_function_String():
+    get_previous_state_function_String = ("\tdef get_previous_state(self, param):\n"
+                                          "\t\treturn self.previous_state.get(param)\n")
+    return get_previous_state_function_String
+    pass
+
+
+def get_Class_State_String():
+    init_function_String = get_Class_State_init_function_String()
+    update_function_String = get_Class_State_update_function_String()
+    calculate_flags_function_String = get_calculate_flags_function_String()
+    get_current_state_function_String = get_get_current_state_function_String()
+    get_previous_state_function_String = get_get_previous_state_function_String()
+    Class_State_String = (f"class State:\n"
+                          f"{init_function_String}\n"
+                          f"{update_function_String}\n"
+                          f"{calculate_flags_function_String}\n"
+                          f"{get_current_state_function_String}\n"
+                          f"{get_previous_state_function_String}\n")
+    # print(Class_State_String)
+    return Class_State_String
+    pass
+
+
+def get_Class_ComplexRule_String():
+    Class_ComplexRule_String = """
 class ComplexRule:
-    def __init__(self, condition, action, priority=0):
-        """
-        :param condition: 用于检查是否满足条件的函数
-        :param action: 动作（ACTION_ON 或 ACTION_OFF）
-        :param priority: 优先级，数值越小优先级越高
-        """
+    def __init__(self, condition):
         self.condition = condition
-        self.action = action
-        self.priority = priority
 
-    def applies_to(self, state):
-        """判断规则是否适用于当前的设备状态"""
-        return self.condition(state)
+    def check_condition(self, state):
+        try:
+            self.condition(state)
+        except Exception as e:
+            print(f"执行规则时发生错误: {e}")
+    """
+    # print(Class_ComplexRule_String)
+    return Class_ComplexRule_String
+    pass
 
 
-class ConflictDetector:
+def get_Class_ConflictDetector_init_function_String():
+    init_function_String = '''
     def __init__(self, rules):
         self.rules = rules
-        self.device_state = State({SignalInitString})
+        self.device_state = State(tuple(0 for _ in range(signal_num)))
+    '''
+    return init_function_String
+    pass
 
-    def detect_and_execute(self,data_tuple):
-        ({SignalString}) = data_tuple
-        self.device_state.update_state({SignalString})
-        applied_actions = self._get_applied_actions()
-        ResultDict = self.device_state.current_state.copy()
-        if not applied_actions:
-            ResultDict['Result'] = '无规则适用'
-        else:
-            if self._has_conflict(applied_actions):
-                ErrorDict = {{}}
-                for key, value in self.device_state.current_state.items():
-                    ErrorDict[f'{{key}}'] = value
-                ResultDict['Result'] = '可能产生冲突'
-                ErrorDict['Result'] = '可能产生冲突'
-                ErrorList.append(ErrorDict)
-            else:
-                chosen_action = applied_actions[0][0]
-                ResultDict['Result'] = chosen_action
-        self.Result_Add_To_List(ResultDict)
 
-    def Result_Add_To_List(self, ResultDict):
-        row = []
-        for col_num, (cell_key, cell_value) in enumerate(ResultDict.items()):
-            row.append(cell_value)
-        ResultList.append(row)
-    def _get_applied_actions(self):
-        """根据条件筛选适用的规则，并按优先级排序"""
-        applied_actions = [
-            (rule.action, rule.priority)
-            for rule in self.rules
-            if rule.applies_to(self.device_state)
-        ]
-        return sorted(applied_actions, key=lambda x: x[1])
+def get_detect_and_execute_function_Action_verify_string():
+    detect_and_execute_function_Action_verify_string = ''
+    for index, row in Action.iterrows():
+        if pd.notna(row.loc['Group']):
+            action_name = re.sub(r'\(.*?\)', '', row.loc['ActionName'])
+            detect_and_execute_function_Action_verify_string += (f"\t\tif len(self.device_state.{action_name}_Set) > 1\n"
+                                                                 f"\t\t\tresult = 'Conflict'\n"
+                                                                 f"\t\telif len(self.device_state.{action_name}_Set) == 1\n"
+                                                                 f"\t\t\tresult = self.device_state.LGL_Set_Set.pop()\n"
+                                                                 f"\t\telif len(self.device_state.{action_name}_Set) == 0\n"
+                                                                 f"\t\t\tresult = 'No action needed'\n")
+    # print(detect_and_execute_function_Action_verify_string)
+    return detect_and_execute_function_Action_verify_string
+    pass
 
-    def _has_conflict(self, applied_actions):
-        """检查是否存在开灯和关灯操作冲突"""
-        actions = {{action for action, _ in applied_actions}}
-        return {ActionConflictString}
-        ''')
 
-    EventFunctionString = ''
-    rowlen = EventDataFrame.shape[1]
-    for i, row in EventDataFrame.iterrows():
-        TimerCount = 0
-        if pd.notna(row.iloc[1]) and re.search('Timer', str(row.iloc[1])) is not None:
-            TimerCount += 1
-        if pd.notna(row.iloc[2]) and re.search('Timer', str(row.iloc[2])) is not None:
-            TimerCount += 1
-        if (TimerCount <= 1 and pd.notna(row.iloc[1]) and pd.notna(row.iloc[2])) or (TimerCount == 0):
-            EventFunctionString += f'\ndef Event_{row.iloc[0]}(device_state):\n    return('
-            for j in range(3, rowlen):
-                if pd.notna(row.iloc[j]) and row.iloc[j] != 'AND':
-                    EventFunctionString += (
-                            ('' if j == 3 else ' and\n           ') + f'(device_state.{row.iloc[j]} == 1)')
-            EventFunctionString += ')\n'
-    RequirementVerifierFile.write(EventFunctionString)
+def get_Class_ConflictDetector_detect_and_execute_function_String():
+    detect_and_execute_function_String = ''
+    detect_and_execute_function_Action_verify_string = get_detect_and_execute_function_Action_verify_string()
+    detect_and_execute_function_String += '''    
+    def detect_and_execute(self, states_tuple):
+        result = ''
+        self.device_state.update_state(states_tuple)
+        for rule in self.rules:
+            rule.check_condition(self.device_state)
+    '''
+    detect_and_execute_function_String += detect_and_execute_function_Action_verify_string
+    pass
 
-    # rules_list
-    RuleString = ''
-    ConflictActionList = []
-    ActionGroup = None
-    for i, row in ActionDataFrame.iterrows():
-        if pd.notna(row.iloc[0]) and ActionGroup == row.iloc[0]:
-            ActionName = re.sub(r"\(\)$", "", row.iloc[1])
-            ConflictActionList[ActionGroup].append(ActionName)
-        if pd.notna(row.iloc[0]) and ActionGroup is None:
-            ActionGroup = int(row.iloc[0])
-            ActionName = re.sub(r"\(\)$", "", row.iloc[1])
-            ConflictActionList.append([ActionName])
-        if pd.notna(row.iloc[0]) and ActionGroup != row.iloc[0]:
-            ActionGroup = int(row.iloc[0])
-            ActionName = re.sub(r"\(\)$", "", row.iloc[1])
-            ConflictActionList.append([ActionName])
 
-    Priority = 0
-    for i, row in EventDataFrame.iterrows():
-        Action1 = re.sub(r"\(\)$", "", str(row.iloc[1]))
-        Action2 = re.sub(r"\(\)$", "", str(row.iloc[2]))
-        for j, List in enumerate(ConflictActionList):
-            if Action1 in List:
-                RuleString += f'    ComplexRule(condition=Event_{row.iloc[0]},action=Action{j}.{Action1},priority={Priority}),\n'
-                Priority += 1
-            if Action2 in List:
-                RuleString += f'    ComplexRule(condition=Event_{row.iloc[0]},action=Action{j}.{Action2},priority={Priority}),\n'
-                Priority += 1
+def get_Class_ConflictDetector_String():
+    init_function_String = get_Class_ConflictDetector_init_function_String()
+    detect_and_execute_function_String = get_Class_ConflictDetector_detect_and_execute_function_String()
+    pass
 
-    RequirementVerifierFile.write(f'''
-rules = [
-{RuleString}
-]
-def Save_Result():
-    ResultDataFrame = pd.DataFrame(ResultList, columns=['BdcSeedsignal', 'BdcWlcmsignal', 'DLC_u8TurnLightTwice', 'EEP_LOGO_ENABLE_FLAG', 'EspAutoHoldActvSts', 'PLB_u8LBSts', 'PPL_boolPosnLampSts', 'PRM_u8PowerSts', 'VcuGearPosn', 'TIMEFLAGNUM', 'Result'])
-    ResultDataFrame.to_excel('Result.xlsx', sheet_name='Result', index=False)
+
 def main():
-    detector = ConflictDetector(rules)
-    ENVIRONMENT_FILE = 'CartesianProduct.xlsx'
-    BATCH_SIZE = 10000
-    skip_rows = 0
-    times = 0
-    while True:
-        try:
-            if times != 0:
-                EnvironmentDataFrame = pd.read_excel(ENVIRONMENT_FILE, sheet_name=0, nrows=BATCH_SIZE, skiprows=skip_rows , header=None)
-            else:
-                EnvironmentDataFrame = pd.read_excel(ENVIRONMENT_FILE, sheet_name=0, nrows=BATCH_SIZE, skiprows=skip_rows)
-            if EnvironmentDataFrame.empty:
-                break
-            for index, row in EnvironmentDataFrame.iterrows():
-                detector.detect_and_execute(tuple(row))
-            skip_rows += BATCH_SIZE
-            times += 1
-        except FileNotFoundError:
-            print("文件不存在")
-            break
-    Save_Result()
-    if not ErrorList:
-        print("No errors")
-    else:
-        for ErrorDict in ErrorList:
-            print(ErrorDict)
+    Header_String = get_header_String()
+    Class_State_String = get_Class_State_String()
+    Class_ComplexRule_String = get_Class_ComplexRule_String()
+    Class_ConflictDetector = get_Class_ConflictDetector_String()
 
 
-if __name__ == '__main__':
-    main()
-''')
-    RequirementVerifierFile.close()
-    print("requirement_verifier.py generated successfully.")
-    print("Press any key to continue...")
-    input()
-
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

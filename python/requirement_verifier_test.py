@@ -6,15 +6,11 @@ import openpyxl
 import cProfile
 import re
 from openpyxl import Workbook
+
 warnings.simplefilter(action='ignore', category=UserWarning)
 ResultList = []
 
 ErrorList = []
-
-
-class Action0(Enum):
-    LGL_ON = 0
-    LGL_OFF = 1
 
 
 class State:
@@ -109,7 +105,7 @@ class State:
         if ((self.DLC_U8TURNLIGHTTWICE_CHANGE_0XFF == 1)) and ((self.DLC_U8TURNLIGHTTWICE_CHANGE_0XFF == 1)):
             self.current_state["TIMEFLAGNUM"] += 1
         if ((self.PRM_U8POWERSTS_CHANGETO_1 == 1) or (self.PRM_U8POWERSTS_CHANGETO_0 == 1)) and (
-        (self.EEP_LOGO_ENABLE_FLAG_EQ_1 == 1)):
+                (self.EEP_LOGO_ENABLE_FLAG_EQ_1 == 1)):
             self.current_state["TIMEFLAGNUM"] += 1
         if ((self.EEP_LOGO_ENABLE_FLAG_CHANGETO_0 == 1)) and ((self.PRM_U8POWERSTS_EQ_2 == 1)):
             self.current_state["TIMEFLAGNUM"] += 1
@@ -117,7 +113,6 @@ class State:
             self.current_state["TIMEFLAGNUM"] += 1
         if self.current_state["TIMEFLAGNUM"] == 0:
             self.TIMEFLAGNUM_EQ_0 = 1
-
     def update_state(self, BdcSeedsignal, BdcWlcmsignal, DLC_u8TurnLightTwice,
                      EEP_LOGO_ENABLE_FLAG, EspAutoHoldActvSts, PLB_u8LBSts,
                      PPL_boolPosnLampSts, PRM_u8PowerSts, VcuGearPosn):
@@ -210,7 +205,7 @@ class State:
         if ((self.DLC_U8TURNLIGHTTWICE_CHANGE_0XFF == 1)) and ((self.DLC_U8TURNLIGHTTWICE_CHANGE_0XFF == 1)):
             self.current_state["TIMEFLAGNUM"] += 1
         if ((self.PRM_U8POWERSTS_CHANGETO_1 == 1) or (self.PRM_U8POWERSTS_CHANGETO_0 == 1)) and (
-        (self.EEP_LOGO_ENABLE_FLAG_EQ_1 == 1)):
+                (self.EEP_LOGO_ENABLE_FLAG_EQ_1 == 1)):
             self.current_state["TIMEFLAGNUM"] += 1
         if ((self.EEP_LOGO_ENABLE_FLAG_CHANGETO_0 == 1)) and ((self.PRM_U8POWERSTS_EQ_2 == 1)):
             self.current_state["TIMEFLAGNUM"] += 1
@@ -244,13 +239,26 @@ class ComplexRule:
         return self.condition(state)
 
 
+def Result_Add_To_List(ResultDict):
+    row = []
+    for col_num, (cell_key, cell_value) in enumerate(ResultDict.items()):
+        row.append(cell_value)
+    ResultList.append(row)
+
+
+def _has_conflict(applied_actions):
+    """检查是否存在开灯和关灯操作冲突"""
+    actions = {action for action, _ in applied_actions}
+    return Action0.LGL_ON in actions and Action0.LGL_OFF in actions
+
+
 class ConflictDetector:
     def __init__(self, rules):
         self.rules = rules
         self.device_state = State(0, 0, 0, 0, 0, 0, 0, 0, 0)
 
-    def detect_and_execute(self,data_tuple):
-        BdcSeedsignal, BdcWlcmsignal, DLC_u8TurnLightTwice,EEP_LOGO_ENABLE_FLAG, EspAutoHoldActvSts, PLB_u8LBSts,PPL_boolPosnLampSts, PRM_u8PowerSts, VcuGearPosn = data_tuple
+    def detect_and_execute(self, data_tuple):
+        BdcSeedsignal, BdcWlcmsignal, DLC_u8TurnLightTwice, EEP_LOGO_ENABLE_FLAG, EspAutoHoldActvSts, PLB_u8LBSts, PPL_boolPosnLampSts, PRM_u8PowerSts, VcuGearPosn = data_tuple
         self.device_state.update_state(BdcSeedsignal, BdcWlcmsignal, DLC_u8TurnLightTwice,
                                        EEP_LOGO_ENABLE_FLAG, EspAutoHoldActvSts, PLB_u8LBSts,
                                        PPL_boolPosnLampSts, PRM_u8PowerSts, VcuGearPosn)
@@ -259,7 +267,7 @@ class ConflictDetector:
         if not applied_actions:
             ResultDict['Result'] = '无规则适用'
         else:
-            if self._has_conflict(applied_actions):
+            if _has_conflict(applied_actions):
                 ErrorDict = {}
                 for key, value in self.device_state.current_state.items():
                     ErrorDict[f'{key}'] = value
@@ -269,14 +277,7 @@ class ConflictDetector:
             else:
                 chosen_action = applied_actions[0][0]
                 ResultDict['Result'] = chosen_action
-        self.Result_Add_To_List(ResultDict)
-
-    def Result_Add_To_List(self, ResultDict):
-        row = []
-        for col_num, (cell_key, cell_value) in enumerate(ResultDict.items()):
-            row.append(cell_value)
-        ResultList.append(row)
-
+        Result_Add_To_List(ResultDict)
 
     def _get_applied_actions(self):
         """根据条件筛选适用的规则，并按优先级排序"""
@@ -287,18 +288,13 @@ class ConflictDetector:
         ]
         return sorted(applied_actions, key=lambda x: x[1])
 
-    def _has_conflict(self, applied_actions):
-        """检查是否存在开灯和关灯操作冲突"""
-        actions = {action for action, _ in applied_actions}
-        return (Action0.LGL_ON in actions and Action0.LGL_OFF in actions)
-
 
 def Event_LGL_SEE_ON(device_state):
-    return ((device_state.BDCSEEDSIGNAL_NEQ_0 == 1))
+    return device_state.BDCSEEDSIGNAL_NEQ_0 == 1
 
 
 def Event_LGL_WEL_ON(device_state):
-    return ((device_state.BDCWLCMSIGNAL_NEQ_0 == 1))
+    return device_state.BDCWLCMSIGNAL_NEQ_0 == 1
 
 
 def Event_LGL_VCU_POL_ON(device_state):
@@ -327,7 +323,7 @@ def Event_LGL_PRM_EEP_ON(device_state):
 
 
 def Event_LGL_DLC_TUL_ON(device_state):
-    return ((device_state.DLC_U8TURNLIGHTTWICE_CHANGE_0XFF == 1))
+    return device_state.DLC_U8TURNLIGHTTWICE_CHANGE_0XFF == 1
 
 
 def Event_LGL_Normal_OFF1(device_state):
@@ -366,9 +362,14 @@ rules = [
 
 ]
 
+
 def Save_Result():
-    ResultDataFrame = pd.DataFrame(ResultList, columns=['BdcSeedsignal', 'BdcWlcmsignal', 'DLC_u8TurnLightTwice', 'EEP_LOGO_ENABLE_FLAG', 'EspAutoHoldActvSts', 'PLB_u8LBSts', 'PPL_boolPosnLampSts', 'PRM_u8PowerSts', 'VcuGearPosn', 'TIMEFLAGNUM', 'Result'])
+    ResultDataFrame = pd.DataFrame(ResultList, columns=['BdcSeedsignal', 'BdcWlcmsignal', 'DLC_u8TurnLightTwice',
+                                                        'EEP_LOGO_ENABLE_FLAG', 'EspAutoHoldActvSts', 'PLB_u8LBSts',
+                                                        'PPL_boolPosnLampSts', 'PRM_u8PowerSts', 'VcuGearPosn',
+                                                        'TIMEFLAGNUM', 'Result'])
     ResultDataFrame.to_excel('Result.xlsx', sheet_name='Result', index=False)
+
 
 def main():
     detector = ConflictDetector(rules)
@@ -379,9 +380,11 @@ def main():
     while True:
         try:
             if times != 0:
-                EnvironmentDataFrame = pd.read_excel(ENVIRONMENT_FILE, sheet_name=0, nrows=BATCH_SIZE, skiprows=skip_rows , header=None)
+                EnvironmentDataFrame = pd.read_excel(ENVIRONMENT_FILE, sheet_name=0, nrows=BATCH_SIZE,
+                                                     skiprows=skip_rows, header=None)
             else:
-                EnvironmentDataFrame = pd.read_excel(ENVIRONMENT_FILE, sheet_name=0, nrows=BATCH_SIZE, skiprows=skip_rows)
+                EnvironmentDataFrame = pd.read_excel(ENVIRONMENT_FILE, sheet_name=0, nrows=BATCH_SIZE,
+                                                     skiprows=skip_rows)
             if EnvironmentDataFrame.empty:
                 break
             for index, row in EnvironmentDataFrame.iterrows():

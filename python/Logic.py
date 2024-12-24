@@ -260,7 +260,7 @@ void Condition_Step()
 	{
 		P_SignalsAndConditions->Signal_uint8[i] = P_SignalsAndConditions->Signal_uint8[i - 1];
 	}
-
+    
 	memset(P_SignalsAndConditions->ConditionFlag, 0, sizeof(P_SignalsAndConditions->ConditionFlag));
 }
 

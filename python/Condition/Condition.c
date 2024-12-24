@@ -166,3 +166,10 @@ static const SignalConditionInfo uint8SignalConditionInfoArray[14] = {
 {VcuGearPosn_Pre_SIGNALNUM, 0, VcuGearPosn_Pre_Conditions} 
 };
 
+const TimeOutCondition TimeOutActionArray[4] = {
+ {1, EQ, &LGL_SEE_OFF}, 
+ {1, EQ, &LGL_EEP_OFF}, 
+ {1, EQ, &LGL_PRM_OFF}, 
+ {1, EQ, &LGL_DLC_OFF}, 
+};
+

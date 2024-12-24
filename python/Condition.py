@@ -307,11 +307,20 @@ def get_signal_signal_condition_info():
     pass
 
 
+def get_timeout_condition_string():
+    Timeout_condition_string = f'const TimeOutCondition TimeOutActionArray[{len(TimeFlagDataFrame)}] = {{\n'
+    for index, row in TimeFlagDataFrame.iterrows():
+        Timeout_condition_string += f" {{1, EQ, &{row.loc['EVT']}}}, \n"
+    Timeout_condition_string += "};\n\n"
+    return Timeout_condition_string
+    pass
+
+
 def write_condition_source():
     signal_condition_string = get_signal_condition_string()
     signal_number_condition_info_string = get_signal_number_condition_info()
     signal_signal_condition_info_string = get_signal_signal_condition_info()
-
+    Timeout_condition_string = get_timeout_condition_string()
     if not os.path.exists('Condition'):
         os.makedirs('Condition')
     with open(CONDITION_SOURCE_PATH, 'w') as f:
@@ -319,6 +328,7 @@ def write_condition_source():
         f.write(signal_condition_string)
         f.write(signal_number_condition_info_string)
         f.write(signal_signal_condition_info_string)
+        f.write(Timeout_condition_string)
     pass
 
 
