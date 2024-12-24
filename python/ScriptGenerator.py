@@ -11,6 +11,7 @@ List = pd.read_excel('Config.xlsx', sheet_name='List')
 Condition = pd.read_excel('Config.xlsx', sheet_name='Condition')
 Event = pd.read_excel('Config.xlsx', sheet_name='EVT')
 
+
 def get_action_status_String():
     action_status_String = ''
     for index, row in Action.iterrows():
@@ -43,7 +44,11 @@ def get_resultDataFrame_String():
 def get_header_String():
     action_status_String = get_action_status_String()
     resultDataFrame_String = get_resultDataFrame_String()
-    header_String = f"import pandas as pd\n\n\n{action_status_String}\n{resultDataFrame_String}"
+    header_String = (f"#!/usr/bin/python\n# -*- coding: GBK -*-\n"
+                     f"import pandas as pd\n"
+                     f"import openpyxl\n"
+                     f"\n\n\n{action_status_String}\n{resultDataFrame_String}\n")
+    header_String += f"signal_num = {signal_num}\n"
     # print(header_String)
     return header_String
     pass
@@ -112,16 +117,31 @@ def get_update_function_update_signal_string():
     pass
 
 
+def get_action_String():
+    action_String = ''
+    for index, row in Action.iterrows():
+        if pd.notna(row.loc['Group']):
+            action_name = re.sub(r'\(.*?\)', '', row.loc['ActionName'])
+            action_pram = re.search(r'\((.*?)\)', row.loc['ActionName'])
+            action_String += (f"\tdef {action_name}(self, {action_pram.group(1)}):\n"
+                              f"\t\tself.{action_name}_Set.add({action_pram.group(1)})\n")
+    # print(action_String)
+    return action_String
+    pass
+
+
 def get_Class_State_update_function_String():
     update_function_update_signal_string = get_update_function_update_signal_string()
     Check_Action_String = get_init_function_Action_String()
+    Action_String = get_action_String()
     class_state_update_function_String = (f"\tdef update_state(self, states_tuple):\n"
                                           f"\t\tfor k in self.current_state.keys():\n"
                                           f"\t\t\tself.previous_state[k] = self.current_state[k]\n"
                                           f"{update_function_update_signal_string}\n"
                                           f"\t\tself.current_state['TIMEFLAGNUM'] = 0\n"
                                           f"\t\tself.calculate_flags()\n"
-                                          f"{Check_Action_String}")
+                                          f"{Check_Action_String}"
+                                          f"{Action_String}")
     # print(class_state_update_function_String)
     return class_state_update_function_String
     pass
@@ -242,7 +262,7 @@ class ComplexRule:
             self.condition(state)
         except Exception as e:
             print(f"执行规则时发生错误: {e}")
-    """
+"""
     # print(Class_ComplexRule_String)
     return Class_ComplexRule_String
     pass
@@ -263,14 +283,27 @@ def get_detect_and_execute_function_Action_verify_string():
     for index, row in Action.iterrows():
         if pd.notna(row.loc['Group']):
             action_name = re.sub(r'\(.*?\)', '', row.loc['ActionName'])
-            detect_and_execute_function_Action_verify_string += (f"\t\tif len(self.device_state.{action_name}_Set) > 1\n"
-                                                                 f"\t\t\tresult = 'Conflict'\n"
-                                                                 f"\t\telif len(self.device_state.{action_name}_Set) == 1\n"
-                                                                 f"\t\t\tresult = self.device_state.LGL_Set_Set.pop()\n"
-                                                                 f"\t\telif len(self.device_state.{action_name}_Set) == 0\n"
-                                                                 f"\t\t\tresult = 'No action needed'\n")
+            detect_and_execute_function_Action_verify_string += (
+                f"        if len(self.device_state.{action_name}_Set) > 1:\n"
+                f"            result = 'Conflict'\n"
+                f"        elif len(self.device_state.{action_name}_Set) == 1:\n"
+                f"            result = self.device_state.LGL_Set_Set.pop()\n"
+                f"        elif len(self.device_state.{action_name}_Set) == 0:\n"
+                f"            result = 'No action needed'\n")
     # print(detect_and_execute_function_Action_verify_string)
     return detect_and_execute_function_Action_verify_string
+    pass
+
+
+def detect_and_execute_function_Set_Clear():
+    detect_and_execute_function_Set_Clear_string = ''
+    for index, row in Action.iterrows():
+        if pd.notna(row.loc['Group']):
+            action_name = re.sub(r'\(.*?\)', '', row.loc['ActionName'])
+            detect_and_execute_function_Set_Clear_string += (f"        self.device_state.{action_name}_Set"
+                                                             f".clear()\n")
+    # print(detect_and_execute_function_Set_Clear_string)
+    return detect_and_execute_function_Set_Clear_string
     pass
 
 
@@ -282,15 +315,144 @@ def get_Class_ConflictDetector_detect_and_execute_function_String():
         result = ''
         self.device_state.update_state(states_tuple)
         for rule in self.rules:
-            rule.check_condition(self.device_state)
-    '''
+            rule.check_condition(self.device_state)\n'''
     detect_and_execute_function_String += detect_and_execute_function_Action_verify_string
+    detect_and_execute_function_String += (f"        new_row = {{**self.device_state.current_state, 'result': result}}\n"
+                                           f"{detect_and_execute_function_Set_Clear()}\n"
+                                           f"        return new_row")
+    # print(detect_and_execute_function_String)
+    return detect_and_execute_function_String
     pass
 
 
 def get_Class_ConflictDetector_String():
     init_function_String = get_Class_ConflictDetector_init_function_String()
     detect_and_execute_function_String = get_Class_ConflictDetector_detect_and_execute_function_String()
+    Class_ConflictDetector_String = (f"\nclass ConflictDetector:"
+                                     f"{init_function_String}\n"
+                                     f"{detect_and_execute_function_String}\n")
+    # print(Class_ConflictDetector_String)
+    return Class_ConflictDetector_String
+    pass
+
+
+def get_event_condition_string(row):
+    event_condition_string = ''
+    row_number = 0
+    for i in range(3, len(row)):
+        if pd.notna(row.iloc[i]):
+            event_condition_string += f"device_state.{row.iloc[i]}"
+            if pd.notna(row.iloc[i + 1]):
+                event_condition_string += " and "
+            row_number += 1
+            if row_number == 2 and pd.notna(row.iloc[i + 1]):
+                event_condition_string += '\n\t\t'
+                row_number = 0
+
+    # print(event_condition_string)
+    return event_condition_string
+    pass
+
+
+def get_event_action_string(row):
+    event_action_string = ''
+    for i in range(1, 3):
+        if pd.notna(row.iloc[i]) and not re.search(r'Timer', str(row.iloc[i])):
+            event_action_string += f"\t\tdevice_state.{row.iloc[i]}\n"
+    # print(event_action_string)
+    return event_action_string
+    pass
+
+
+def get_event_function_String():
+    event_function_String = ''
+    for index, row in Event.iterrows():
+        if pd.notna(row.iloc[3]):
+            TimeAction_number = 0
+            if re.search(r'Timer', str(row.iloc[1])):
+                TimeAction_number += 1
+            if re.search(r'Timer', str(row.iloc[2])):
+                TimeAction_number += 1
+            if (pd.notna(row.iloc[1]) and pd.notna(row.iloc[2]) and TimeAction_number == 2) or (
+                    pd.isnull(row.iloc[2]) and TimeAction_number == 1):
+                continue
+            event_function_String += (f"\ndef Event{row.loc['EVTName']}(device_state):\n"
+                                      f"\tif ({get_event_condition_string(row)}):\n"
+                                      f"{get_event_action_string(row)}\n")
+    # print(event_function_String)
+    return event_function_String
+    pass
+
+
+def get_rules_list_string():
+    rules_list_string = 'rules = [\n'
+    for index, row in Event.iterrows():
+        TimeAction_number = 0
+        if re.search(r'Timer', str(row.iloc[1])):
+            TimeAction_number += 1
+        if re.search(r'Timer', str(row.iloc[2])):
+            TimeAction_number += 1
+        if (pd.notna(row.iloc[1]) and pd.notna(row.iloc[2]) and TimeAction_number == 2) or (
+                pd.isnull(row.iloc[2]) and TimeAction_number == 1) or pd.isnull(row.iloc[3]):
+            continue
+        rules_list_string += f"\tComplexRule(condition= Event{row.loc['EVTName']}),\n"
+    rules_list_string += ']'
+    # print(rules_list_string)
+    return rules_list_string
+    pass
+
+
+def get_main_String():
+    main_String = '''
+def main():
+    detector = ConflictDetector(rules)
+    ENVIRONMENT_FILE = 'CartesianProduct.xlsx'
+    BATCH_SIZE = 100000
+    skip_rows = 0
+    new_rows = []
+    while True:
+        try:
+            EnvironmentDataFrame = pd.read_excel(
+                ENVIRONMENT_FILE, sheet_name=0, nrows=BATCH_SIZE, skiprows=skip_rows
+            )
+            if EnvironmentDataFrame.empty:
+                break
+            for index, row in EnvironmentDataFrame.iterrows():
+                new_row = detector.detect_and_execute(tuple(row))
+                new_rows.append(new_row)
+            skip_rows += BATCH_SIZE
+        except FileNotFoundError:
+            print("文件不存在")
+            break
+
+    global resultDataFrame
+    resultDataFrame = pd.concat([resultDataFrame, pd.DataFrame(new_rows)], ignore_index=True)
+    with pd.ExcelWriter('result.xlsx', engine='openpyxl') as writer:
+        resultDataFrame.to_excel(writer, index=False)
+
+        # 获取工作表对象
+        worksheet = writer.sheets['Sheet1']
+
+        # 调整列宽
+        for column in worksheet.columns:
+            max_length = 0
+            column = column[0].column_letter  # 获取列字母
+            for cell in worksheet[column]:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(cell.value)
+                except:
+                    pass
+            adjusted_width = (max_length + 2)*1.5  # 增加一些额外的宽度
+            worksheet.column_dimensions[column].width = adjusted_width
+
+    print("Excel文件已生成，并且列宽已调整")
+
+
+if __name__ == '__main__':
+    main()
+'''
+    return main_String
     pass
 
 
@@ -299,6 +461,19 @@ def main():
     Class_State_String = get_Class_State_String()
     Class_ComplexRule_String = get_Class_ComplexRule_String()
     Class_ConflictDetector = get_Class_ConflictDetector_String()
+    Event_function_String = get_event_function_String()
+    rules_list_string = get_rules_list_string()
+    main_String = get_main_String()
+    with open('requirement_verifier_test.py', 'w') as f:
+        f.write(Header_String)
+        f.write(Class_State_String)
+        f.write(Class_ComplexRule_String)
+        f.write(Class_ConflictDetector)
+        f.write(Event_function_String)
+        f.write(rules_list_string)
+        f.write(main_String)
+        f.close()
+    pass
 
 
 if __name__ == "__main__":

@@ -239,7 +239,7 @@ def main():
     while True:
         try:
             EnvironmentDataFrame = pd.read_excel(
-                ENVIRONMENT_FILE, sheet_name=0, nrows=BATCH_SIZE, skiprows=skip_rows, header=None
+                ENVIRONMENT_FILE, sheet_name=0, nrows=BATCH_SIZE, skiprows=skip_rows
             )
             if EnvironmentDataFrame.empty:
                 break
