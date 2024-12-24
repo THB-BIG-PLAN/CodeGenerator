@@ -1,5 +1,4 @@
 import os
-from collections import defaultdict
 
 import pandas as pd
 import openpyxl
@@ -223,7 +222,7 @@ def get_signal_condition_string():
             if filtered_row.loc['ThresholdType'] == 'CONDITION_TYPE_SIGNAL':
                 if Condition_Number != 0:
                     Condition_String += " , "
-                Condition_String += f"{{{filtered_row.loc['Threshold']}, {filtered_row.loc['Symbol']}, {filtered_row.loc['EVT']}, {filtered_row.loc['Macro']}}}"
+                Condition_String += f"{{{filtered_row.loc['Threshold']}, {filtered_row.loc['Symbol']}, &{filtered_row.loc['EVT']}, {filtered_row.loc['Macro']}}}"
                 Condition_Number += 1
         Signal_Condition_String += f"const SignalCondition {Signal_Name}_SignalConditions[{Condition_Number}] = {{{Condition_String}}};\n"
         Condition_String = ''
@@ -246,7 +245,7 @@ def get_condition_number_type_info_string(matching_type_rows):
         Condition_Length = len(filtered_df)
         if index != 0:
             condition_number_type_info_string += " ,\n"
-        condition_number_type_info_string += f"{{{Signal_Name}_SIGNALNUM, {Condition_Length}, {Signal_Name}_Conditions}}"
+        condition_number_type_info_string += f"{{{Signal_Name}_SIGNALNUM, {Condition_Length}, &{Signal_Name}_Conditions}}"
     # print(condition_number_type_info_string)
     return condition_number_type_info_string
 
@@ -283,7 +282,7 @@ def get_condition_signal_type_info_string(matching_type_rows):
         Condition_Length = len(filtered_df)
         if index != 0:
             condition_signal_type_info_string += " ,\n"
-        condition_signal_type_info_string += f"{{{Signal_Name}_SIGNALNUM, {Condition_Length}, {Signal_Name}_Conditions}}"
+        condition_signal_type_info_string += f"{{{Signal_Name}_SIGNALNUM, {Condition_Length}, &{Signal_Name}_Conditions}}"
     # print(condition_signal_type_info_string)
     return condition_signal_type_info_string
     pass

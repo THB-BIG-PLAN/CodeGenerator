@@ -443,7 +443,7 @@ def main():
                         max_length = len(cell.value)
                 except:
                     pass
-            adjusted_width = (max_length + 2)*1.5  # 增加一些额外的宽度
+            adjusted_width = (max_length + 2)*1.3  # 增加一些额外的宽度
             worksheet.column_dimensions[column].width = adjusted_width
 
     print("Excel文件已生成，并且列宽已调整")
