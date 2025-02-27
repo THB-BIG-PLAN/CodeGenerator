@@ -19,6 +19,8 @@ extern void LGL_SEE_TIMEOUT();
 extern void LGL_Normal_OFF();
 extern void LGL_Normal_OFF1();
 extern void LGL_Normal_OFF2();
+extern void TestFun();
+extern void TestAction();
 
 
 #endif // EVT_EVENT_EVT_
